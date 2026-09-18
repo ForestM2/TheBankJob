@@ -535,8 +535,8 @@
       (aboveBankLot?bankFrontBuilding:cityPackAsset?.completeLot?lotSurface:cityLayer).append(g);
     });
     if(renderPhase==='CLEANUP'){
-      [90,145].forEach(x=>landmarkForeground.append(el('image',{href:'tiled/tilesets/TopDown Vehicles v1/TAXI TOPDOWN/MOVE/WEST/SEPARATED/TAXI_CLEAN_WEST_000.png',x,y:58,width:48,height:48,class:'city-pack-asset airport-pickup-vehicle','aria-hidden':'true'})));
-      const s=el('svg',{x:200,y:58,width:48,height:48,viewBox:'0 0 100 100',class:'airport-pickup-vehicle'});s.append(el('image',{href:'tiled/tilesets/TopDown Vehicles v1/MINIVAN TOPDOWN/Black/Black_MINIVAN_CLEAN_8D_000-sheet.png',x:0,y:0,width:300,height:300,class:'city-pack-asset','aria-hidden':'true'}));landmarkForeground.append(s);
+      [90,145].forEach(x=>landmarkForeground.append(el('image',{href:'TAXI_CLEAN_WEST_000.png',x,y:58,width:48,height:48,class:'city-pack-asset airport-pickup-vehicle','aria-hidden':'true'})));
+      const s=el('svg',{x:200,y:58,width:48,height:48,viewBox:'0 0 100 100',class:'airport-pickup-vehicle'});s.append(el('image',{href:'Black_MINIVAN_CLEAN_8D_000-sheet.png',x:0,y:0,width:300,height:300,class:'city-pack-asset','aria-hidden':'true'}));landmarkForeground.append(s);
     }
   }
   const phaseTwoEdges=()=>[...MAP_DATA.edges.filter(edge=>!PHASE_TWO_REMOVED.some(removed=>MAP_DATA.edgeKey(...removed)===MAP_DATA.edgeKey(...edge))),...PHASE_TWO_ADDED];
