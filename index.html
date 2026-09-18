@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Getaway Grid — Airport Run v0.11</title>
+<style>
+  @font-face { font-family:"VCR OSD Mono"; src:url("assets/fonts/VCR_OSD_MONO_1.001.ttf") format("truetype"); font-display:swap; }
+  :root { --night:#101822; --panel:#182431; --street:#8498a9; --open:#dce7ef;
+    --ink:#f5f1e8; --muted:#aebbc5; --bank:#d4a33b; --hideout:#4eaa79;
+    --car:#e64f3f; --legal:#f5c84b; --blocked:#e5574f; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; min-height:100%; background:var(--night); color:var(--ink);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  body { display:flex; justify-content:center; overflow:hidden; }
+  main { width:min(100%,520px); height:100svh; min-height:0; overflow:hidden; display:flex; flex-direction:column; padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom)); }
+  header { display:flex; align-items:end; justify-content:space-between; gap:12px; margin:0 4px 10px; }
+  h1 { margin:0; font-size:clamp(20px,6vw,28px); letter-spacing:.08em; text-transform:uppercase; }
+  header p { margin:2px 0 0; color:var(--muted); font-size:12px; }
+  .mode-toggle { min-height:34px; padding:6px 9px; font-size:11px; color:var(--muted); background:#22313e; }
+  .map-shell { flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; background:var(--panel); border:1px solid #314151; border-radius:16px; overflow:hidden;
+    box-shadow:0 14px 35px #0007; }
+  svg { display:block; width:100%; height:auto; max-height:calc(100svh - 190px); object-fit:contain; touch-action:manipulation; }
+  .legend { display:none; }
+  body:not(.debug-mode) header,
+  body:not(.debug-mode) .controls,
+  body:not(.debug-mode) .status,
+  body:not(.debug-mode) .legend,
+  body:not(.debug-mode) .data-controls,
+  body:not(.debug-mode) .history { display:none; }
+  body:not(.debug-mode) main { width:100vw; height:100svh; padding:0; display:grid; place-items:center; }
+  body:not(.debug-mode) .map-shell { width:min(100vw,81.967svh); height:min(100svh,122vw); flex:none; border:0; border-radius:0; box-shadow:none; }
+  body:not(.debug-mode) .map-shell > svg { width:100%; height:100%; max-height:none; }
+  .street { stroke:var(--street); stroke-width:18; stroke-linecap:round; }
+  /* The four-pixel curb around asphalt matches the concrete sidewalks on every lot. */
+  .street-bed { stroke:#c5c8b8; stroke-width:26; stroke-linecap:round; }
+  .exterior-bank-apron { fill:#bfc3b1; shape-rendering:crispEdges; pointer-events:none; }
+  .exterior-bank-green { fill:url(#bank-verge-ground); shape-rendering:crispEdges; pointer-events:none; }
+  .airport-lot-curb { fill:#c5c8b8; shape-rendering:crispEdges; pointer-events:none; }
+  .airport-lot-asphalt { fill:#303a42; stroke:#263746; stroke-width:2; shape-rendering:crispEdges; pointer-events:none; }
+  .airport-lot-bay { fill:none; stroke:#c5d0d7; stroke-width:1; opacity:.62; shape-rendering:crispEdges; pointer-events:none; }
+  .exterior-service-yard { fill:#3d4543; shape-rendering:crispEdges; pointer-events:none; }
+  .exterior-service-curb { fill:#bfc3b1; shape-rendering:crispEdges; pointer-events:none; }
+  .exterior-fence { stroke:#b8c1ad; stroke-width:2; stroke-dasharray:3 2; shape-rendering:crispEdges; pointer-events:none; }
+  .exterior-loading-mark { fill:#d5a33c; shape-rendering:crispEdges; pointer-events:none; }
+  .terrain-dirt { fill:#81915b; opacity:.72; shape-rendering:crispEdges; pointer-events:none; }
+  .terrain-weed { fill:#3f6c3e; shape-rendering:crispEdges; pointer-events:none; }
+  .street-mark { stroke:#d6dde1; stroke-width:1.5; stroke-linecap:round; stroke-dasharray:7 10; opacity:.38; pointer-events:none; }
+  .roadblock-indicator { stroke:var(--blocked); stroke-width:18; stroke-opacity:.48; stroke-linecap:butt; pointer-events:none; }
+  .roadblock-sign { image-rendering:pixelated; pointer-events:none; }
+  .city-lot { stroke:#30404e; stroke-width:2; shape-rendering:crispEdges; }
+  .phase-two-plaza { fill:url(#terrain-ground); pointer-events:none; shape-rendering:crispEdges; }
+  .lot-commercial { fill:#253646; } .lot-residential { fill:#253d38; }
+  .lot-industrial { fill:#3b3437; } .lot-park { fill:#234b3c; }
+  .lot-garage { fill:#333b48; } .lot-open { fill:#303a42; }
+  .pixel-building { stroke:#111a22; stroke-width:2; shape-rendering:crispEdges; }
+  .pixel-window { fill:#62c8d8; shape-rendering:crispEdges; }
+  .pixel-light { fill:#f2c84b; shape-rendering:crispEdges; }
+  .pixel-tree { fill:#39a861; stroke:#173524; stroke-width:2; shape-rendering:crispEdges; }
+  .pixel-roadmark { fill:#aab6bd; opacity:.65; shape-rendering:crispEdges; }
+  .city-pack-asset { image-rendering:pixelated; pointer-events:none; }
+  .decorative-cloud { opacity:.68; }
+  .decorative-cloud-variation { mix-blend-mode:screen; }
+  .decorative-cloud-shadow { fill:#25344a; opacity:.24; }
+  .storefront-sign-panel { fill:#173b32; stroke:#f4dfaf; stroke-width:1; }
+  .storefront-sign-text { fill:#fff4c7; font-family:"VCR OSD Mono",monospace; font-size:6px; letter-spacing:.15px; text-anchor:middle; dominant-baseline:middle; pointer-events:none; }
+  .landmark-pixel { image-rendering:pixelated; pointer-events:none; }
+  .bank-parking-lot { fill:#303a42; stroke:#263746; stroke-width:3; shape-rendering:crispEdges; pointer-events:none; }
+  .bank-parking-space { fill:none; stroke:#c5d0d7; stroke-width:1.25; opacity:.62; shape-rendering:crispEdges; pointer-events:none; }
+  .airport-runway-bed { fill:#263746; pointer-events:none; }
+  .airport-runway { fill:var(--street); pointer-events:none; }
+  .airport-runway-mark { stroke:#d6dde1; stroke-width:2; stroke-dasharray:12 9; opacity:.55; pointer-events:none; }
+  .airport-sprite { image-rendering:pixelated; pointer-events:none; }
+  .airport-plane { transform-box:fill-box; transform-origin:center; }
+  .stationary-vehicle { image-rendering:pixelated; pointer-events:none; }
+  .intersection { fill:var(--open); stroke:#182431; stroke-width:3; }
+  .intersection.legal { fill:var(--legal); }
+  .intersection-label { fill:#101822; font-size:9px; font-weight:900; text-anchor:middle; pointer-events:none; }
+  .move-signal { pointer-events:none; }
+  .signal-housing { fill:#d9a62e; fill-opacity:.28; stroke:#5c4210; stroke-opacity:.82; stroke-width:1.25; shape-rendering:crispEdges; }
+  .signal-green { fill:#55dc78; fill-opacity:.62; stroke:#173c24; stroke-opacity:.88; stroke-width:1; }
+  .signal-glow { fill:#f0c24f; opacity:.07; }
+  .hideout-signal { pointer-events:none; animation:hideout-signal-pulse 1.4s ease-in-out infinite; }
+  .hideout-signal .hideout-arrow { fill:#55dc78; stroke:#173c24; stroke-width:1.2; }
+  @keyframes hideout-signal-pulse { 0%,100% { opacity:.55; transform:translateY(0); } 50% { opacity:1; transform:translateY(3px); } }
+  .tap-target { fill:transparent; cursor:pointer; }
+  .endpoint { fill:transparent; stroke:transparent; }
+  .endpoint-label { fill:#f5f1e8; font-size:10px; font-weight:950; text-anchor:middle; paint-order:stroke; stroke:#101822; stroke-width:3px; }
+  .landmark-outline { stroke:#101822; stroke-width:2; shape-rendering:crispEdges; }
+  .bank-stone { fill:#d6b76f; } .bank-roof { fill:#f0d793; }
+  .airport-wall { fill:#5f91ad; } .airport-glass { fill:#8ee0e8; }
+  .hideout-wall { fill:#52725f; } .hideout-door { fill:#17242b; }
+  .car-body { fill:var(--car); stroke:#fff; stroke-width:2; }
+  .car-body.switched { fill:#e9b949; }
+  .car-glass { fill:#a8d7e8; }
+  .pursuer-body { fill:#273b90; stroke:#d9edff; stroke-width:2; }
+  .patrol-body { fill:#f4f6f8; stroke:#3476c7; stroke-width:3; }
+  .police-light { fill:#e84d4d; }
+  .vehicle-sprite { image-rendering:pixelated; }
+  .police-halo { fill:none; stroke:#5aa8ff; stroke-width:2; stroke-dasharray:4 3; opacity:.8; animation:police-halo-pulse 1s ease-in-out infinite; }
+  @keyframes police-halo-pulse { 0%,100% { stroke:#5aa8ff; opacity:.15; } 25% { stroke:#5aa8ff; opacity:1; } 49% { stroke:#5aa8ff; opacity:.15; } 50% { stroke:#ff5656; opacity:.15; } 75% { stroke:#ff5656; opacity:1; } 99% { stroke:#ff5656; opacity:.15; } }
+  @media (prefers-reduced-motion:reduce) { .police-halo { animation:none; opacity:.8; } }
+  .patrol-label { fill:#101822; font-size:8px; font-weight:900; text-anchor:middle; pointer-events:none; }
+  .switch-marker { fill:#f3a63b; stroke:#fff1ca; stroke-width:3; pointer-events:none; }
+  .switch-label { fill:#111a22; font-size:8px; font-weight:950; text-anchor:middle; pointer-events:none; }
+  .task-marker { fill:#72c7a5; stroke:#effff8; stroke-width:3; pointer-events:none; }
+  .task-label { fill:#101822; font-size:7px; font-weight:950; text-anchor:middle; pointer-events:none; }
+  .crew-car { image-rendering:pixelated; pointer-events:none; }
+  .money-marker { pointer-events:none; opacity:.7; animation:money-marker-float 1.5s ease-in-out infinite; }
+  .money-marker .bag { fill:#65b934; stroke:#13200f; stroke-width:1.5; }
+  .money-marker .tie { fill:#8fd84b; stroke:#13200f; stroke-width:1.2; }
+  .money-marker text { fill:#f8f4c8; font:900 10px/1 "VCR OSD Mono",monospace; text-anchor:middle; dominant-baseline:central; }
+  .flight-clock { pointer-events:none; }
+  .flight-clock rect { fill:#101923e8; stroke:#d4a33b; stroke-width:2; }
+  .flight-clock text { fill:#fff7e8; font:700 11px/1 "VCR OSD Mono",monospace; letter-spacing:.02em; }
+  @keyframes money-marker-float { 0%,100% { opacity:.55; } 50% { opacity:.85; } }
+  @media (prefers-reduced-motion:reduce) { .money-marker { animation:none; } }
+  .crew-halo { pointer-events:none; stroke-width:2; fill-opacity:.16; opacity:.75; animation:crew-halo-pulse 1.6s ease-in-out infinite; }
+  @keyframes crew-halo-pulse { 0%,100% { opacity:.3; } 50% { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .crew-halo { animation:none; opacity:.75; } }
+  .crew-tap-target { fill:transparent; pointer-events:all; cursor:pointer; }
+  .district { fill:#8192a0; opacity:.42; font-size:14px; font-weight:800; letter-spacing:.18em; }
+  .controls { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; padding:12px; }
+  body:not(.debug-mode) .controls #reset { grid-column:1/-1; }
+  .data-controls { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:0 12px 12px; }
+  button { min-height:44px; border:0; border-radius:10px; padding:9px 12px; color:var(--ink);
+    background:#2b3b49; font:700 14px inherit; cursor:pointer; }
+  button:active { transform:translateY(1px); }
+  #layout-name { display:flex; align-items:center; color:var(--muted); font-size:13px; }
+  .status { padding:0 13px 13px; color:var(--muted); font-size:13px; min-height:32px; }
+  .history { margin:0 12px 12px; padding:12px; border-radius:10px; background:#101923; color:var(--muted); font-size:13px; }
+  .history[hidden] { display:none; }
+  .history b { color:var(--ink); }
+  .history-row { display:flex; justify-content:space-between; gap:12px; padding-top:6px; }
+  .card-backdrop { position:fixed; inset:0; display:grid; place-items:center; padding:10px; background:#07101acc; z-index:10; }
+  .card-backdrop[hidden] { display:none; }
+  .situation-card { width:min(100%,420px); max-height:calc(100svh - 20px); padding:16px; overflow:hidden; border:2px solid #d4a33b; border-radius:16px; background:#f3ead7; color:#17212b; box-shadow:0 18px 60px #000b; }
+  .situation-card h2 { margin:0 0 8px; font-size:23px; text-transform:uppercase; letter-spacing:.05em; }
+  .situation-card p { margin:0 0 16px; line-height:1.45; }
+  .card-choices { display:grid; gap:8px; }
+  .card-choices button { background:#263b4d; }
+  .level-splash { position:absolute; inset:0; z-index:8; display:grid; place-items:center; pointer-events:none; font:700 clamp(34px,10vw,72px)/1 "VCR OSD Mono",monospace; letter-spacing:.08em; color:#fff7e8; text-shadow:4px 4px 0 #111c27,0 0 18px #000b; opacity:0; }
+  .level-splash.instruction { font-size:clamp(18px,5.5vw,38px); white-space:nowrap; }
+  .level-splash.active { animation:level-splash-in 1.25s ease-out forwards; }
+  @keyframes level-splash-in { 0% { opacity:0; transform:scale(.82); } 20%,68% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(1.04); } }
+  @media (prefers-reduced-motion:reduce) { .level-splash.active { animation:none; opacity:1; } }
+  .intro-backdrop { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:10px; background:#07101af2; }
+  .intro-backdrop[hidden] { display:none; }
+  .intro-card { position:relative; width:min(100%,520px); max-height:calc(100svh - 20px); overflow:hidden; border:6px solid transparent; border-radius:14px; background:linear-gradient(#111c27,#111c27) padding-box,linear-gradient(135deg,#f5df55 0%,#c7a719 48%,#665108 100%) border-box; box-shadow:6px 7px 0 #05090dcc,0 22px 70px #000d; }
+  .intro-scene { position:relative; aspect-ratio:16/9; overflow:hidden; background:#263746; }
+  .intro-background { display:block; width:100%; height:100%; object-fit:cover; image-rendering:pixelated; }
+  .intro-skids { position:absolute; z-index:1; inset:0; opacity:0; clip-path:inset(0 0 0 100%); filter:blur(.35px); pointer-events:none; }
+  .intro-skids::before,.intro-skids::after { content:""; position:absolute; height:2.2%; background:#111820b8; transform:rotate(6deg); transform-origin:left center; }
+  .intro-skids::before { left:64%; top:86.5%; width:23%; }
+  .intro-skids::after { left:88%; top:86.5%; width:11%; }
+  .intro-car { position:absolute; z-index:2; width:72.6%; right:1%; bottom:-5%; transform:translateX(140%); image-rendering:pixelated; filter:drop-shadow(0 5px 3px #0008); }
+  .intro-robber { position:absolute; z-index:3; width:39%; left:8%; bottom:-7%; image-rendering:pixelated; filter:drop-shadow(0 5px 3px #0009); pointer-events:none; }
+  .intro-backdrop.staging .intro-car { animation:intro-car-arrives 1.15s cubic-bezier(.2,.75,.25,1) .25s forwards; }
+  .intro-backdrop.staging .intro-skids { animation:intro-skids-appear 1.15s steps(10,end) .25s forwards; }
+  @keyframes intro-car-arrives { 0% { transform:translateX(140%); } 78% { transform:translateX(-4%); } 90% { transform:translateX(1.5%); } 100% { transform:translateX(0); } }
+  @keyframes intro-skids-appear { 0% { opacity:0; clip-path:inset(0 0 0 100%); } 25% { opacity:.34; } 100% { opacity:.48; clip-path:inset(0); } }
+  .intro-copy { position:absolute; inset:calc(4% - 45px) 8% auto; z-index:5; font-family:"VCR OSD Mono",monospace; opacity:0; transform:translateY(16px) scale(.96); animation:intro-copy-in .55s ease-out 1.55s forwards; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .intro-copy button { display:block; width:100%; padding:0; border:2px solid #d94b45; border-bottom-color:#53100f; border-radius:8px; background:transparent; cursor:pointer; box-shadow:inset 0 2px 0 #fff8,0 6px 0 #541312; transform:translateY(0); }
+  .intro-copy button:hover { filter:brightness(1.08); }
+  .intro-copy button:active { transform:translateY(5px); box-shadow:0 1px 0 #541312; }
+  .intro-title-art { display:block; width:100%; cursor:pointer; image-rendering:pixelated; filter:drop-shadow(0 8px 0 #160a25) drop-shadow(0 0 12px #ffb51c88); }
+  .intro-copy::after,.intro-copy::before { content:""; position:absolute; width:6px; height:6px; background:#e9edf2; border:2px solid #252938; opacity:0; animation:bullet-hole-pop .18s steps(2,end) 2s forwards; }
+  .intro-copy::before { left:18%; top:28%; } .intro-copy::after { right:22%; top:62%; animation-delay:2.25s; }
+  @keyframes intro-copy-in { to { opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes bullet-hole-pop { from { opacity:0; transform:scale(2); } to { opacity:.9; transform:scale(1); } }
+  .intro-copy button { border:0; background:transparent; box-shadow:none; }
+  .intro-copy button:hover { filter:brightness(1.08); }
+  .intro-copy button:active { transform:translateY(2px); box-shadow:none; }
+  @media (prefers-reduced-motion:reduce) { .intro-car { transform:none; } .intro-backdrop.staging .intro-car,.intro-backdrop.staging .intro-skids { animation:none; } }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; padding:11px 4px 0; color:var(--muted); font-size:12px; }
+  .key { display:flex; gap:6px; align-items:center; }
+  .dot { width:13px; height:13px; border-radius:50%; background:var(--open); }
+  .dot.legal { background:var(--legal); } .slash { width:22px; border-top:4px dashed var(--blocked); }
+  body:not(.debug-mode) .debug-only,
+  body:not(.debug-mode) .intersection-label,
+  body:not(.debug-mode) .patrol-label { display:none; }
+  body:not(.debug-mode) .intersection { opacity:0; }
+  body.debug-mode .move-signal { display:none; }
+  .mode-badge { color:var(--legal); font-weight:800; }
+
+  .situation-card.tboned-card { width:min(100%,520px); padding:0; overflow:hidden; max-height:calc(100svh - 20px); border:6px solid #d7b62b; background:#111c27; color:#f5f4eb; font-family:"VCR OSD Mono",monospace; }
+  .tboned-card #card-title { margin:18px 20px 10px; }
+  .tboned-card #card-text { margin:0 20px 18px; color:#bdc8d2; }
+  .tboned-card #card-choices { margin:0 20px 22px; }
+  .tboned-card #card-choices button { width:100%; background:linear-gradient(#b53a36,#8e2725); border:2px solid #d94b45; box-shadow:0 5px 0 #541312; color:#fff7e8; font-family:inherit; }
+  .tboned-scene { position:relative; aspect-ratio:3/2; overflow:hidden; background:#263746; isolation:isolate; }
+  .tboned-scene.loading * { animation-play-state:paused!important; }
+  .tboned-scene img { pointer-events:none; image-rendering:pixelated; }
+  .tboned-background { width:100%; height:100%; display:block; }
+  .tboned-red { position:absolute; left:29%; top:32%; width:70%; animation:tboned-arrival 1.15s cubic-bezier(.2,.75,.25,1) .25s both; }
+  .tboned-red img { display:block; width:100%; }
+  .tboned-red .tboned-damaged { position:absolute; inset:0; opacity:0; animation:tboned-damage 1ms 2.05s forwards; }
+  .tboned-intact { animation:tboned-hide-intact 1ms 2.05s forwards; }
+  .tboned-police { position:absolute; left:2%; top:26%; width:47%; animation:tboned-ram .65s cubic-bezier(.45,0,.9,.65) 1.4s both; }
+  .tboned-action { position:absolute; inset:0; animation:tboned-jolt .25s 2.05s both; }
+  .tboned-police > img { display:block; width:100%; }
+  .tboned-police::before,.tboned-police::after { content:""; position:absolute; top:24%; width:18%; height:2.6%; border-radius:25%; pointer-events:none; mix-blend-mode:screen; opacity:.12; animation:tboned-light-flash 1s ease-in-out infinite; }
+  .tboned-police::before { left:33%; background:#ff5548; box-shadow:0 0 5px 2px #ff3020,0 0 13px 4px #ff302088; }
+  .tboned-police::after { left:53%; background:#62baff; box-shadow:0 0 5px 2px #2080ff,0 0 13px 4px #2080ff88; animation-delay:-.5s; }
+  @keyframes tboned-light-flash { 0%,50%,100% { opacity:.12; } 25% { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .tboned-police::before,.tboned-police::after { animation:none; opacity:.35; } }
+  .tboned-scene.loading .tboned-police::before,.tboned-scene.loading .tboned-police::after { animation-play-state:paused; }
+  @keyframes tboned-arrival { from { transform:translateX(145%); } to { transform:translateX(0); } }
+  @keyframes tboned-ram { from { transform:translate(-55%,85%); } to { transform:translate(0,0); } }
+  @keyframes tboned-damage { to { opacity:1; } }
+  @keyframes tboned-hide-intact { to { opacity:0; } }
+  @keyframes tboned-jolt { 0%,100% { transform:translate(0,0); } 25% { transform:translate(1%,-.7%); } 65% { transform:translate(-.5%,.3%); } }
+  @media (prefers-reduced-motion:reduce) { .tboned-scene * { animation:none!important; } .tboned-red .tboned-damaged { opacity:1; } .tboned-intact { opacity:0; } }
+  .intercepted-card { width:min(100%,520px); padding:0; overflow:hidden; max-height:calc(100svh - 20px); border:6px solid #d7b62b; background:#111c27; color:#f5f4eb; font-family:"VCR OSD Mono",monospace; }
+  .intercepted-card #card-title { margin:18px 20px 10px; }
+  .intercepted-card #card-text { margin:0 20px 18px; color:#bdc8d2; }
+  .intercepted-card #card-choices { margin:0 20px 22px; }
+  .intercepted-card #card-choices button { width:100%; background:linear-gradient(#b53a36,#8e2725); border:2px solid #d94b45; box-shadow:0 5px 0 #541312; color:#fff7e8; font-family:inherit; }
+  .shortcut-card { padding:0; overflow:hidden; }
+  .shortcut-card .shortcut-art { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; image-rendering:pixelated; }
+  .shortcut-card #card-title,.shortcut-card #card-text,.shortcut-card #card-choices { margin-left:20px; margin-right:20px; }
+  .road-closed-card { padding:0; overflow:hidden; font-family:"VCR OSD Mono",monospace; }
+  .road-closed-card .road-closed-art { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; image-rendering:pixelated; }
+  .road-closed-card #card-title,.road-closed-card #card-text,.road-closed-card #card-choices { margin-left:20px; margin-right:20px; }
+  .terminal-art-card { width:min(100%,520px); padding:0; overflow:hidden; max-height:calc(100svh - 20px); border:6px solid #d7b62b; background:#111c27; color:#f5f4eb; font-family:"VCR OSD Mono",monospace; }
+  .terminal-art-card .terminal-art { display:block; width:100%; height:min(34svh,270px); aspect-ratio:16/10; object-fit:cover; object-position:center top; image-rendering:pixelated; }
+  .terminal-art-card.surrendered-card .terminal-art { height:calc(min(34svh,270px) + 10px); }
+  .map2-briefing-art { object-position:center; }
+  .second-flight-card { position:relative; }
+  .waiting-card { position:relative; }
+  .waiting-card .card-light-flash { top:19%; right:24%; width:30%; height:13%; transform:translate(-30px,-30px); }
+  .card-light-flash { position:absolute; top:7%; right:11%; width:28%; height:14%; pointer-events:none; mix-blend-mode:screen; background:linear-gradient(90deg,#e93445 0 48%,transparent 48% 52%,#3b8dff 52%); opacity:.18; filter:blur(8px); transform:translate(15px,-30px); animation:card-light-flash .9s ease-in-out infinite; }
+  @keyframes card-light-flash { 0%,100% { opacity:.28; filter:blur(8px); background:linear-gradient(90deg,#ff394b 0 48%,transparent 48% 52%,#245dca 52%); } 45% { opacity:.08; filter:blur(10px); } 50% { opacity:.28; filter:blur(8px); background:linear-gradient(90deg,#b52235 0 48%,transparent 48% 52%,#4d9bff 52%); } 95% { opacity:.08; filter:blur(10px); } }
+  .handoff-art-card .terminal-art { object-position:center; aspect-ratio:16/9; }
+  .terminal-art-card #card-title { margin:18px 20px 10px; }
+  .terminal-art-card #card-text { margin:0 20px 18px; color:#bdc8d2; }
+  .terminal-art-card #card-choices { margin:0 20px 22px; }
+  .terminal-art-card #card-choices button { width:100%; background:linear-gradient(#b53a36,#8e2725); border:2px solid #d94b45; box-shadow:0 5px 0 #541312; color:#fff7e8; font-family:inherit; }
+  .intercepted-scene { position:relative; aspect-ratio:1/1; overflow:hidden; background:#263746; isolation:isolate; }
+  .intercepted-scene img { pointer-events:none; image-rendering:pixelated; }
+  .intercepted-background { width:100%; height:100%; display:block; }
+  .intercepted-police { position:absolute; left:24%; top:22%; width:40%; z-index:2; }
+  .intercepted-police img { display:block; width:100%; }
+  .intercepted-police::before,.intercepted-police::after { content:""; position:absolute; top:25%; width:9%; height:2.5%; border-radius:30%; pointer-events:none; mix-blend-mode:screen; opacity:.12; animation:intercepted-light-flash 1s ease-in-out infinite; }
+  .intercepted-police::before { left:43%; background:#ff4d45; box-shadow:0 0 5px 2px #ff3020,0 0 11px 3px #ff302088; }
+  .intercepted-police::after { left:55%; background:#57aaff; box-shadow:0 0 5px 2px #2080ff,0 0 11px 3px #2080ff88; animation-delay:-.5s; }
+  @keyframes intercepted-light-flash { 0%,50%,100% { opacity:.1; } 25% { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .intercepted-police::before,.intercepted-police::after { animation:none; opacity:.35; } }
+  .intercepted-officers { position:absolute; left:20%; top:7%; width:43%; height:43%; object-fit:contain; z-index:3; transform:rotate(15deg); transform-origin:50% 50%; }
+  .intercepted-red { position:absolute; left:52%; top:51%; width:36%; z-index:4; animation:intercepted-screech 1s cubic-bezier(.16,.78,.22,1) .35s both; }
+  .intercepted-red img { display:block; width:100%; }
+  .intercepted-chyron { position:absolute; left:0; right:0; bottom:0; z-index:6; display:flex; height:8%; font:700 clamp(7px,1.8vw,12px)/1 "VCR OSD Mono",monospace; color:#fff; text-shadow:1px 1px #000; white-space:nowrap; overflow:hidden; }
+  .intercepted-chyron b { padding:7px 8px; background:#b52d2d; } .intercepted-chyron span { flex:1; min-width:0; padding:7px 8px; background:#1857bd; overflow:hidden; text-overflow:clip; }
+  @keyframes intercepted-screech { from { transform:translate(0,72%) scale(1.08); } to { transform:translate(0,0) scale(1); } }
+  @keyframes intercepted-skids { 0% { opacity:0; clip-path:inset(0 100% 0 0); } 35% { opacity:.7; } 100% { opacity:.45; clip-path:inset(0); } }
+  @media (prefers-reduced-motion:reduce) { .intercepted-scene * { animation:none!important; } .intercepted-red { transform:none; } .intercepted-skids { opacity:.45; } }
+</style>
+</head>
+<body>
+<main>
+  <header><div><h1>Getaway Grid</h1><p id="mode-subtitle">Get the crew clear.</p><p class="debug-only mode-badge">Development tools visible</p></div><button id="view-toggle" class="mode-toggle" title="Tap to switch views">View: Player</button></header>
+  <section class="map-shell">
+    <svg id="map" viewBox="0 0 500 610" role="img" aria-labelledby="map-title map-desc">
+      <title id="map-title">Five by five getaway street grid</title>
+      <desc id="map-desc">Escape from the bank to the car switch, complete both cleanup tasks on the changed street map, then return to the airport.</desc>
+      <defs><clipPath id="car-frame"><rect x="-24" y="-24" width="48" height="48"/></clipPath><clipPath id="player-car-frame"><rect x="-24" y="-24" width="48" height="48"/></clipPath><clipPath id="bus-frame"><rect x="-38" y="-38" width="76" height="76"/></clipPath><pattern id="terrain-ground" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#587945"/><rect x="2" y="1" width="2" height="2" fill="#6e8c55"/><rect x="8" y="4" width="2" height="2" fill="#486c3f"/><rect x="4" y="9" width="1" height="1" fill="#91a667"/></pattern><pattern id="bank-verge-ground" width="23" height="29" patternUnits="userSpaceOnUse"><rect width="23" height="29" fill="#547f46"/><path d="M3 6h5v2H3z M15 21h4v2h-4z" fill="#78865a" opacity=".6"/><path d="M5 4h2v2H5z M17 18h2v3h-2z M10 13h3v2h-3z" fill="#466f3e"/><path d="M2 19h2v1H2z M18 7h2v1h-2z" fill="#6b9054"/></pattern><filter id="magenta-key" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" result="key-red" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0"/><feColorMatrix in="SourceGraphic" result="key-blue" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0"/><feColorMatrix in="SourceGraphic" result="key-not-green" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 -1 0 0 1"/><feComposite in="key-red" in2="key-blue" operator="arithmetic" k3="1" result="key-red-blue"/><feComposite in="key-red-blue" in2="key-not-green" operator="arithmetic" k3="1" result="key-magenta"/><feComponentTransfer in="key-magenta" result="keep-nonmagenta"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feComposite in="SourceGraphic" in2="keep-nonmagenta" operator="in"/></filter></defs>
+      <rect width="500" height="610" fill="url(#terrain-ground)"/>
+      <g id="exterior-context"></g><g id="city-blocks"></g><g id="street-beds"></g><g id="lot-surfaces"></g><g id="streets"></g><g id="bank-underlay"></g><g id="bank-front-building"></g><g id="plaza-decor"></g><g id="roadblock-signs"></g><g id="depth-sprites"></g><g id="nodes"></g><g id="objectives"></g><g id="police"></g><g id="car"></g><g id="landmark-foreground"></g><g id="contact-demo"></g>
+    </svg>
+    <div class="level-splash" id="level-splash" aria-hidden="true">LEVEL 1</div>
+    <div class="controls"><button id="map-preview" class="debug-only">Preview Map 2</button><button id="layout" class="debug-only">Change roadblocks</button><button id="reset">Restart</button></div>
+    <div class="controls debug-only"><button data-contact-demo="INTERCEPTED">Test intercepted</button><button data-contact-demo="T_BONED">Test T-bone</button><button data-contact-demo="POLICE_MANEUVERS">Test police maneuvers</button></div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div class="data-controls debug-only"><button id="history-button">Run history</button><button id="download-json">Save JSON…</button><button id="download-csv">Download CSV</button><button id="clear-history">Clear data</button></div>
+    <div class="history debug-only" id="history" hidden></div>
+  </section>
+  <div class="legend"><span class="key"><i class="dot legal"></i>available move</span><span class="key debug-only"><i class="dot"></i>numbered node</span><span class="key"><i class="slash"></i>roadblock</span><span class="key">green/purple: crew payouts</span><span class="key">blue: pursuer</span><span class="key">white: patrol</span></div>
+</main>
+<div class="intro-backdrop staging" id="intro-backdrop">
+  <section class="intro-card" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+    <div class="intro-scene">
+      <img class="intro-background" src="assets/vignettes/opening-bank-background-v2.png" alt="An empty downtown street outside a bank.">
+      <div class="intro-skids" aria-hidden="true"></div>
+      <img class="intro-car" src="assets/vignettes/opening-muscle-car-v1.png" alt="A red muscle car pulls up to the curb.">
+      <img class="intro-robber" src="assets/vignettes/opening-robber-foreground-v4.png" alt="A robber carrying two bags waits on the sidewalk with his back to the bank.">
+    </div>
+    <div class="intro-copy"><h2 id="intro-title" class="sr-only">The Bank Job</h2><button id="start-getaway" aria-label="Start getaway"><img class="intro-title-art" src="assets/vignettes/the-bank-job-title.png" alt="The Bank Job. Click to start."></button></div>
+  </section>
+</div>
+<div class="card-backdrop" id="card-backdrop" hidden>
+  <section class="situation-card" role="dialog" aria-modal="true" aria-labelledby="card-title">
+    <h2 id="card-title"></h2><p id="card-text"></p><div class="card-choices" id="card-choices"></div>
+  </section>
+</div>
+<script src="map-data.js"></script>
+<script src="game-rules.js"></script>
+<script>
+(() => {
+  const NS='http://www.w3.org/2000/svg';
+  let debugMode=location.hash==='#debug'||new URLSearchParams(location.search).get('debug')==='1';
+  function renderViewMode(){
+    document.body.classList.toggle('debug-mode',debugMode);
+    document.getElementById('mode-subtitle').textContent=debugMode?'Mobile Level 1 · airport run v0.11':'Get the crew clear.';
+    document.getElementById('view-toggle').textContent=debugMode?'View: Development':'View: Player';
+  }
+  renderViewMode();
+  const map=document.getElementById('map'), cityLayer=document.getElementById('city-blocks'), exteriorContext=document.getElementById('exterior-context'), bankUnderlay=document.getElementById('bank-underlay'), bankFrontBuilding=document.getElementById('bank-front-building'), beds=document.getElementById('street-beds'),lotSurface=document.getElementById('lot-surfaces');
+  const streets=document.getElementById('streets'), plazaDecor=document.getElementById('plaza-decor'), roadblockSigns=document.getElementById('roadblock-signs'), depthLayer=document.getElementById('depth-sprites'), nodes=document.getElementById('nodes');
+  const objectiveLayer=document.getElementById('objectives'), policeLayer=document.getElementById('police'), carLayer=document.getElementById('car'), landmarkForeground=document.getElementById('landmark-foreground'), status=document.getElementById('status');
+  const positions={bank:[80,34],hideout:[420,576]};
+  MAP_DATA.nodes.forEach(n=>{ if(!n.outside) positions[n.id]=[80+n.col*85,105+n.row*100]; });
+  const LOG_KEY='getaway-grid:v0.11:run-log',LOG_SCHEMA='getaway-grid-run-log-v11';
+  const RUN_DB='getaway-grid-runs',RUN_STORE='runs';
+  const PHASE_TWO_REMOVED=[['n03','n14'],['n12','n22'],['n21','n22'],['n22','n23'],['n22','n32']];
+  const PHASE_TWO_ADDED=[['n03','n04'],['n04','n14'],['n11','n22'],['n13','n22'],['n31','n22'],['n33','n22']];
+  const ROAMING_PURSUER_CONFIG={territory:['bank','hideout',...MAP_DATA.nodes.filter(node=>!node.outside).map(node=>node.id)],patterns:[{id:'FORMER-PURSUER-CITY',waypoints:['n00','n03','n14','n34','n44','n40','n30','n10']} ]};
+  const CREW_ROUTES=[
+    {id:'DRIVER_OUTER_LOOP',waypoints:['n00','n01','n02','n03','n04','n14','n24','n34','n44','n43','n42','n41','n40','n30','n20','n10'],style:'crew-green',sprite:'assets/vehicles/green-luxury-8dir.png'},
+    {id:'CONTACT_CENTER_LOOP',waypoints:['n11','n22','n33','n34','n24','n23','n13','n22'],style:'crew-magenta',sprite:'assets/vehicles/magenta-luxury-8dir.png'}
+  ];
+  const CREW_START_EXCLUDED=new Set(['n23','n24','n32','n33','n34','n42','n43','n44']);
+  const BUS_ROUTE=['n10','n11','n22','n33','n34','n24','n14','n13','n22','n31','n30','n20'];
+  const CARDS=[
+    {id:'ROAD_CLOSED_AHEAD',title:'Road Closed Ahead',excludedNodes:['n44']},
+    {id:'PARKING_GARAGE_SHORTCUT',title:'Parking Garage Shortcut',excludedNodes:['n33','n34','n43','n44']}
+  ];
+  const CONTACT_CARDS={
+    INTERCEPTED:{title:'Intercepted',text:'A police car meets the getaway car head-on. The escape ends at the intersection.'},
+    T_BONED:{title:'T-Boned',text:'A police car hits the getaway car broadside and knocks it out of the escape.'},
+    POLICE_MANEUVERS:{title:'Police Maneuvers',text:'Police close from behind and maneuver the getaway car off the road.'}
+  };
+  const FLIGHT_WINDOW=20,SECOND_FLIGHT_WINDOW=7;
+  const PLAYABLE_LAYOUT_INDICES=[0];
+  const MAP_TWO_CONTACTS={
+    RECOGNIZED:{title:'Recognized',text:'The officer recognizes you from the bank surveillance footage. The clean car is no longer enough.',terminal:true},
+    MATCHING_DESCRIPTION:{title:'Matching the Description',text:'You and the car match the updated description. The officer confirms the identification and arrests you.',terminal:true},
+    ROUTINE_STOP:{title:'Routine Traffic Stop',text:'The stop remains routine and you are released, but the flight is three turns closer to departure.',delay:3},
+    CALLED_AWAY:{title:'Called Away',text:'A more urgent call comes over the radio. The officer leaves, costing you only one flight turn.',delay:1},
+    WRONG_CAR:{title:'Wrong Car',text:'After checking the description, the officer decides this is the wrong car. The stop costs two flight turns.',delay:2},
+    KNOWN_ASSOCIATE:{title:'Your Associate Is Known',text:'Your associate was being followed. You were recognized while delivering his cut and are now under arrest.',terminal:true}
+  };
+  const AIRPORT_PERIMETER=new Set(['n00','n01','n02','n10','n11','n12']);
+  const CARD_CHECK_DISABLED={GETAWAY:new Set(['n00']),CLEANUP:new Set()};
+  const BLOCK_THEMES=[
+    'commercial','commercial','garage','open',
+    'residential','commercial','open','commercial',
+    'residential','open','industrial','open',
+    'park','residential','residential','commercial'
+  ];
+  const AIRPORT_BLOCK_THEMES=[
+    'commercial','open','commercial','industrial',
+    'industrial','park','park','commercial',
+    'industrial','park','park','park',
+    'commercial','industrial','open','commercial'
+  ];
+  // The base overlaps the dark curb by one pixel on each side, while the
+  // asphalt itself remains above it. This is deliberately a small 69px frame,
+  // not a road-to-road expansion.
+  const calibrationLot=(col,row)=>({src:'assets/city/generated-building-specimens/fixed-lot-base-v1-51x66.png',x:88+col*85,y:114+row*100,width:69,height:82,stretch:true,completeLot:true,raisedClip:[0,0,0,0]});
+  const greenApartmentCandidate={src:'assets/city/generated-building-specimens/green-apartment-candidate-v1-transparent-51w.png',x:173,y:91,width:69,height:105,stretch:true,completeLot:true,raisedClip:[0,0,1,.23]};
+  const churchCandidate={src:'assets/city/generated-building-specimens/city-church-complete-lot-69x82-v1.png',x:173,y:290,width:69,height:106,completeLot:true,raisedClip:[0,0,1,.23]};
+  const brickApartmentCandidate={src:'assets/city/generated-building-specimens/brick-apartment-row-1-col-3-v3-transparent-69x96.png',x:258,y:100,width:69,height:96,completeLot:true,raisedClip:[0,0,1,.15]};
+  const blueMidriseCandidate={src:'assets/city/generated-building-specimens/blue-midrise-candidate-v1-transparent-69w.png',x:258,y:198,width:69,height:98,completeLot:true,raisedClip:[0,0,1,.17]};
+  const greenAwningStoreCandidate={src:'assets/city/generated-building-specimens/green-awning-market-square-roof-v2-transparent-69x82.png',x:343,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0],storefrontSign:{text:'MARKET',x:17,y:48,width:35,height:8},roofSign:{src:'assets/city/generated-building-specimens/new-coffee-rooftop-sign-v1-14x24.png',x:43,y:12,width:14,height:24}};
+  const twoRowhousesCandidate={src:'assets/city/generated-building-specimens/two-rowhouses-complete-lot-v1-transparent-69x89.png',x:343,y:407,width:69,height:89,completeLot:true,raisedClip:[0,0,1,.08]};
+  const twinTownhousesCandidate={src:'assets/city/generated-building-specimens/ornate-twin-townhouses-complete-lot-v1-transparent-69x97.png',x:258,y:399,width:69,height:97,completeLot:true,raisedClip:[0,0,1,.15]};
+  const redBlueRowhousesCandidate={src:'assets/city/generated-building-specimens/red-blue-rowhouses-complete-lot-v1-transparent-69x96.png',x:173,y:400,width:69,height:96,completeLot:true,raisedClip:[0,0,1,.15]};
+  const georgianTownhousesCandidate={src:'assets/city/generated-building-specimens/two-georgian-townhouses-complete-lot-v1-transparent-69w.png',x:88,y:311,width:69,height:85,completeLot:true,raisedClip:[0,0,1,.04]};
+  const cornerGroceryCandidate={src:'assets/city/generated-building-specimens/corner-grocery-complete-lot-v1-transparent-69w.png',x:258,y:314,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0],roofSign:{src:'assets/city/generated-building-specimens/drink-pizza-bottle-rooftop-sign-v1-26x22.png',x:22,y:29,width:26,height:22}};
+  const blueUrbanMidriseCandidate={src:'assets/city/generated-building-specimens/blue-urban-midrise-complete-lot-v1-transparent-69w.png',x:173,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]};
+  const centerParkLotCandidate=(x,y)=>({src:'assets/city/generated-building-specimens/center-park-landscaped-lot-v1-transparent-69x82.png',x,y,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]});
+  // Coordinates mirror the user-adjusted Tiled object; Tiled uses a bottom-edge y,
+  // while SVG images use their top edge.
+  const trianglePocketParkCandidate={src:'assets/city/generated-building-specimens/triangle-pocket-park-v1-51x66.png',x:343.005501286423,y:128.4844060493238,width:58.9486267701383,height:67.0458719434392,stretch:true};
+  const CITY_PACK_TEST=[
+    {src:'assets/city/generated-building-specimens/tall-apartment-complete-lot-v1-keyed-51w.png',x:89,y:74,width:67,height:122,completeLot:true,raisedClip:[.16,0,.84,.78]},greenApartmentCandidate,brickApartmentCandidate,
+    trianglePocketParkCandidate,
+    {src:'assets/city/generated-building-specimens/five-story-terracotta-apartment-complete-lot-v1-keyed-51w.png',x:89,y:182,width:67,height:114,completeLot:true,raisedClip:[.17,0,.83,.8]},blueUrbanMidriseCandidate,
+    blueMidriseCandidate,
+    greenAwningStoreCandidate,georgianTownhousesCandidate,
+    churchCandidate,
+    cornerGroceryCandidate,
+    {src:'assets/city/urban-exteriors/open-asphalt.png',x:343.005501286422,y:314.2605476185496,width:68.5706486497793,height:82.1064279289644,stretch:true},
+    {src:'assets/city/generated-building-specimens/map1-pocket-park-row-4-col-1-v1-transparent-69x82.png',x:88,y:414,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]},
+    redBlueRowhousesCandidate,twinTownhousesCandidate,twoRowhousesCandidate
+  ];
+  const AIRPORT_CITY_PACK=[
+    // Map 2 is stored by block row, four lots per row.
+    {src:'assets/city/generated-building-specimens/tower-mall-row-1-col-1-v1-transparent-69x92.png',x:88,y:104,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/museum-row-1-col-2-v1-transparent-69x80.png',x:173,y:116,width:69,height:80,completeLot:true,raisedClip:[0,0,0,0]},{src:'assets/city/generated-building-specimens/hotel-row-1-col-3-v2-transparent-69x92.png',x:258,y:104,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/city-arena-row-1-col-4-v1-transparent-69x95.png',x:343,y:101,width:69,height:95,completeLot:true,raisedClip:[0,0,1,13/95]},
+    {src:'assets/city/generated-building-specimens/construction-site-row-2-col-1-v2-transparent-69x120.png',x:88,y:176,width:69,height:120,completeLot:true,raisedClip:[0,0,1,38/120],stretch:true},centerParkLotCandidate(173,214),centerParkLotCandidate(258,214),{src:'assets/city/generated-building-specimens/parking-garage-row-1-col-2-v1-transparent-69x82.png',x:343,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]},
+    {src:'assets/city/generated-building-specimens/building-row-3-col-1-v1-transparent-69x92.png',x:88,y:304,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},centerParkLotCandidate(173,314),centerParkLotCandidate(258,314),{src:'assets/city/generated-building-specimens/building-row-4-col-3-v1-transparent-69x92.png',x:343,y:304,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},
+    {src:'assets/city/generated-building-specimens/blue-apartment-row-4-col-1-v3-transparent-69x92.png',x:88,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,.15]},{src:'assets/city/generated-building-specimens/school-row-4-col-2-v1-transparent-69x92.png',x:173,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/ps-athletics-row-4-col-3-v1-transparent-69x92.png',x:258,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/garage-row-4-col-4-v2-transparent-69x92.png',x:343,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,.15]}
+];
+  let pos='bank', phase='GETAWAY', previewPhase=null, layoutIndex=MAP_DATA.roadblockLayouts.findIndex(layout=>layout.name==='Bypass test 1 — block 15–20'), turns=0, flightTurnsRemaining=null,flightAttempt=1,flightTransitioning=false,knownAssociateAfterTurn=null,pursuer=null, roamingPursuer=null, bus=null, pursuitState='IDENTIFIED', switchPending=false,protectedDeparture=false,hideoutForegroundActive=false,patrols,carSwitch,objectives,ended=false,currentRun=null,outcomeMessage='',dynamicBlocked=[],cardState=null,previousPos=null,awaitingCard=false,shortcutSelecting=false,cardCheckedNodes,animating=false,takeoffPlayed=false,airportAmbush=false,visualPositions={},vehicleHeadings={},pendingContactCard=null,collisionVisualOffsets={},collisionVisualHeadings={},rendezvousVisualOffsets={},movementFinished=Promise.resolve();
+  const el=(name,attrs={})=>{const x=document.createElementNS(NS,name);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));return x};
+  function blockRect(group,x,y,width,height,fill,className='pixel-building'){group.append(el('rect',{x,y,width,height,fill,class:className}));}
+  function drawLandmark(group,type,cx,cy){
+    if(type==='BANK'){
+      // Map 1's larger bank lot is drawn beneath the city blocks in draw().
+    } else if(type==='AIRPORT'){
+      // Map 2 endpoint: park, enter the terminal, then depart from the runway.
+      const airportScale=1.25,airportAnchorX=cx+80;
+      const airportArt=el('g',{class:'airport-art',transform:`translate(${airportAnchorX*(1-airportScale)} ${cy*(1-airportScale)}) scale(${airportScale})`});
+      airportArt.append(el('rect',{x:cx+125,y:cy-9,width:219,height:38,rx:3,class:'airport-runway-bed'}));
+      airportArt.append(el('rect',{x:cx+129,y:cy-5,width:211,height:30,rx:2,class:'airport-runway'}));
+      airportArt.append(el('line',{x1:cx+137,y1:cy+10,x2:cx+332,y2:cy+10,class:'airport-runway-mark'}));
+      airportArt.append(el('image',{href:'assets/airport/terminal-v1.png',x:cx+10,y:cy-53,width:140,height:105,class:'airport-sprite airport-terminal'}));
+      airportArt.append(el('image',{href:'assets/airport/plane-v1.png',x:cx+125,y:cy-21,width:92,height:61,class:'airport-sprite airport-plane'}));
+      group.append(airportArt);
+    } else {
+      group.append(el('image',{href:'assets/city/generated-building-specimens/hideout-garage-candidate-v1-transparent-69x92.png',x:cx-34.5,y:cy-58,width:69,height:92,class:'landmark-pixel'}));
+      group.append(el('image',{href:'assets/city/signage/hideout-arrow-sign-v1-transparent-120x40.png',x:cx-207,y:cy-31,width:138,height:46,class:'city-pack-asset hideout-arrow-sign'}));
+    }
+  }
+  function drawExteriorContext(renderPhase=phase){
+    exteriorContext.replaceChildren();
+    // Art-only endpoint surroundings: they frame the two special locations but
+    // never create a road, node, target, or new legal move.
+    if(renderPhase==='CLEANUP'){
+      // Place one empty airport lot beside the runway; the runway and roads
+      // remain on higher layers, so the paved surfaces connect cleanly.
+      exteriorContext.append(
+      el('rect',{x:58,y:0,width:362,height:108,class:'airport-lot-curb'}),
+      el('rect',{x:62,y:4,width:354,height:100,class:'airport-lot-asphalt'}),
+      ...[252,276,300,324,348,372].map(x=>el('rect',{x,y:74,width:18,height:27,class:'airport-lot-bay'}))
+      );
+    } else exteriorContext.append(
+      // The terrain field is the surrounding city edge; these two paved pads
+      // make the bank and garage read as destinations within it. Map 1 also
+      // gets the metropolitan lake scene north of node 5, beneath roads and game art.
+      el('rect',{x:58,y:0,width:114,height:88,class:'exterior-bank-apron'}),
+      el('rect',{x:18,y:0,width:40,height:88,class:'exterior-bank-green'}),
+      el('image',{href:'assets/city/metropolitan-lake-node5-scene-v1-transparent.png',x:344,y:19,width:152,height:90,class:'city-pack-asset metropolitan-lake-node5-scene'}),
+      ...[[365,1],[426,1],[324,43],[296,67],[326,88],[420,116],[448,145],[420,174],[448,203],[420,232],[448,261]].map(([x,y])=>
+        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset metropolitan-lake-tree'})
+      ),
+      el('image',{href:'assets/city/signage/bank-sign-v1-transparent-138x69.png',x:182,y:18,width:138,height:69,class:'city-pack-asset bank-sign'})
+    );
+    exteriorContext.append(
+      el('rect',{x:350,y:514,width:150,height:96,class:'exterior-service-curb'}),
+      el('rect',{x:357,y:521,width:143,height:89,class:'exterior-service-yard'}),
+      el('line',{x1:365,y1:522,x2:365,y2:602,class:'exterior-fence'}),
+      el('rect',{x:458,y:544,width:7,height:14,class:'exterior-loading-mark'}),
+      el('rect',{x:476,y:544,width:7,height:14,class:'exterior-loading-mark'}),
+      ...[[8,116],[20,224],[6,342],[18,454],[478,126],[462,238],[480,354],[466,462]].map(([x,y])=>
+        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset exterior-tree'})
+      ),
+      ...[[1,163],[31,294],[3,413],[477,163],[447,294],[475,413]].map(([x,y])=>
+        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:22,height:32,class:'city-pack-asset exterior-tree-large'})
+      ),
+      ...[[28,142],[45,205],[25,323],[47,438],[468,252],[476,400],[455,590]].flatMap(([x,y])=>[
+        el('rect',{x,y,width:6,height:3,class:'terrain-dirt'}),
+        el('rect',{x:x+2,y:y-3,width:2,height:3,class:'terrain-weed'})
+      ]),
+      ...[[3,535,'large'],[46,559,'large'],[87,530,'large'],[128,558,'large'],[171,531,'large'],[22,576,'small'],[64,535,'small'],[107,577,'small'],[151,544,'small'],[194,574,'small']].map(([x,y,size])=>
+        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:size==='large'?22:11,height:size==='large'?32:16,class:`city-pack-asset hideout-margin-tree hideout-margin-tree-${size}`})
+      ),
+      ...[[4,198],[4,264],[22,371],[4,483]].map(([x,y])=>
+        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset map-left-margin-tree'})
+      ),
+      ...[[40,95],[40,235],[40,330],[40,430],[40,500],[477,275],[438,340],[438,420],[438,500],[438,550]].map(([x,y])=>
+        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:22,height:32,class:'city-pack-asset map-margin-tree-large'})
+      ),
+      
+    );
+    // Existing flower-bed sprite adds small color/ground-cover breaks to the
+    // broad green margins on both maps without touching street or lot art.
+    [[49,110],[48,210],[49,310],[48,410],[49,510],[438,110],[437,210],[438,310],[437,410],[438,510]].forEach(([x,y])=>
+      exteriorContext.append(el('image',{href:'assets/city/generated-building-specimens/tiny-flower-planter-v1-7x7.png',x,y,width:11,height:11,class:'city-pack-asset margin-flower-bed'}))
+    );
+    if(renderPhase==='GETAWAY')[[21,10],[21,68]].forEach(([x,y])=>
+      exteriorContext.append(el('image',{href:'assets/city/generated-building-specimens/tiny-flower-planter-v1-7x7.png',x,y,width:11,height:11,class:'city-pack-asset bank-verge-flower-bed'}))
+    );
+    if(renderPhase==='CLEANUP')exteriorContext.append(el('image',{href:'assets/city/airport-garden-sign-v1-transparent.png',x:-4,y:10,width:69,height:82,class:'city-pack-asset airport-garden-sign','aria-hidden':'true'}));
+  }
+  function drawCityBlocks(renderPhase=phase){
+    cityLayer.replaceChildren();
+    if(renderPhase==='CLEANUP')cityLayer.append(el('rect',{x:182,y:222,width:136,height:166,class:'phase-two-plaza'}));
+    const activeBlockThemes=renderPhase==='CLEANUP'?AIRPORT_BLOCK_THEMES:BLOCK_THEMES;
+    activeBlockThemes.forEach((theme,index)=>{
+      const row=Math.floor(index/4),col=index%4,x=97+col*85,y=122+row*100,w=51,h=66,g=el('g',{'data-block':index+1,'data-theme':theme});
+      const fountainPlaza=renderPhase==='CLEANUP'&&[5,6,9,10].includes(index),visualTheme=fountainPlaza?'park':theme;
+      const cityPackAsset=(renderPhase==='CLEANUP'?AIRPORT_CITY_PACK:CITY_PACK_TEST)[index];
+      const framelessBuilding=cityPackAsset?.completeLot||cityPackAsset?.raised||cityPackAsset?.src.includes('/ai-city-source/');
+      g.setAttribute('data-theme',visualTheme);
+      if(index===3&&renderPhase==='GETAWAY')g.append(el('image',{href:trianglePocketParkCandidate.src,x:trianglePocketParkCandidate.x,y:trianglePocketParkCandidate.y,width:trianglePocketParkCandidate.width,height:trianglePocketParkCandidate.height,class:'city-pack-asset',...(trianglePocketParkCandidate.stretch?{preserveAspectRatio:'none'}:{})}));
+      else if(!framelessBuilding)g.append(el('rect',{x,y,width:w,height:h,class:`city-lot lot-${visualTheme}`}));
+      if(fountainPlaza&&!cityPackAsset){
+        // Fountains are drawn later, above the diagonal roads.
+      } else if(index===3&&renderPhase==='GETAWAY'){
+        // The triangle-pocket asset above is already clipped to the diagonal road boundary.
+      } else if(cityPackAsset){
+        const imageX=cityPackAsset.x??x+(w-cityPackAsset.width)/2,imageY=cityPackAsset.y??y+h-cityPackAsset.height;
+        const image=el('image',{href:cityPackAsset.src,x:imageX,y:imageY,width:cityPackAsset.width,height:cityPackAsset.height,class:'city-pack-asset',...(cityPackAsset.stretch?{preserveAspectRatio:'none'}:{})});
+        if(cityPackAsset.completeLot){
+          g.append(image);
+          if(cityPackAsset.storefrontSign){
+            const sign=cityPackAsset.storefrontSign,signX=imageX+sign.x,signY=imageY+sign.y;
+            g.append(el('rect',{x:signX,y:signY,width:sign.width,height:sign.height,class:'storefront-sign-panel'}));
+            const label=el('text',{x:signX+sign.width/2,y:signY+sign.height/2+.5,class:'storefront-sign-text'});label.textContent=sign.text;g.append(label);
+          }
+          const roofSign=cityPackAsset.roofSign?el('image',{href:cityPackAsset.roofSign.src,x:imageX+cityPackAsset.roofSign.x,y:imageY+cityPackAsset.roofSign.y,width:cityPackAsset.roofSign.width,height:cityPackAsset.roofSign.height,class:'rooftop-sign'}):null;
+          const [left,top,right,bottom]=cityPackAsset.raisedClip,clipId=`building-clip-${renderPhase}-${index}`;
+          const clip=el('clipPath',{id:clipId,clipPathUnits:'userSpaceOnUse'});
+          clip.append(el('rect',{x:imageX+cityPackAsset.width*left,y:imageY+cityPackAsset.height*top,width:cityPackAsset.width*(right-left),height:cityPackAsset.height*(bottom-top)}));
+          const sprite=el('g',{'data-depth-y':imageY+cityPackAsset.height,'data-depth-kind':'building','data-block-sprite':index+1});
+          sprite.append(clip,el('image',{href:cityPackAsset.src,x:imageX,y:imageY,width:cityPackAsset.width,height:cityPackAsset.height,class:'city-pack-asset','clip-path':`url(#${clipId})`,...(cityPackAsset.stretch?{preserveAspectRatio:'none'}:{})}));if(roofSign)sprite.append(roofSign);depthLayer.append(sprite);
+        } else if(framelessBuilding){
+          const sprite=el('g',{'data-depth-y':imageY+cityPackAsset.height,'data-depth-kind':'building','data-block-sprite':index+1});sprite.append(image);depthLayer.append(sprite);
+        } else g.append(image);
+        if(renderPhase==='GETAWAY'&&index===11)g.append(el('image',{href:'assets/vehicles/yellow-construction-truck-diagonal.png',x:x+8.5,y:y+8,width:34,height:50,class:'stationary-vehicle'}));
+      } else if(cityPackAsset===null){
+        // Intentionally empty while the replacement city modules are recut to the board scale.
+      } else if(theme==='commercial'){
+        blockRect(g,x+5,y+8,w-10,43,index%2?'#b75250':'#8059a6');blockRect(g,x+9,y+13,w-18,6,'#263442','pixel-building');
+        [0,1,2].forEach(slot=>blockRect(g,x+9+slot*12,y+26,7,10,'#62c8d8','pixel-window'));blockRect(g,x+8,y+54,w-16,4,'#d5a33c','pixel-light');
+      } else if(theme==='residential'){
+        [[5,10],[27,9],[16,38]].forEach(([dx,dy],house)=>{blockRect(g,x+dx,y+dy,18,19,house%2?'#d17855':'#5b7bb2');blockRect(g,x+dx+4,y+dy+7,4,5,'#f2c84b','pixel-light');});
+        blockRect(g,x+39,y+43,7,9,'#39a861','pixel-tree');
+      } else if(theme==='industrial'){
+        blockRect(g,x+5,y+10,w-10,43,'#75666a');[0,1,2,3].forEach(slot=>blockRect(g,x+9+slot*9,y+17,5,5,'#62c8d8','pixel-window'));
+        blockRect(g,x+10,y+48,w-20,5,'#222d35','pixel-building');blockRect(g,x+38,y+4,6,17,'#9d7b64','pixel-building');
+      } else if(theme==='garage'){
+        blockRect(g,x+5,y+6,w-10,54,'#555f6b');[0,1,2,3].forEach(slot=>blockRect(g,x+10,y+14+slot*11,w-20,2,'#aab6bd','pixel-roadmark'));
+        blockRect(g,x+20,y+24,12,18,'#263442','pixel-building');const p=el('text',{x:x+26,y:y+37,fill:'#f2c84b','font-size':14,'font-weight':900,'text-anchor':'middle'});p.textContent='P';g.append(p);
+      } else if(theme==='park'){
+        blockRect(g,x+5,y+6,w-10,54,'#2f7650','pixel-building');blockRect(g,x+18,y+19,17,25,'#286b86','pixel-building');
+        [[9,12],[39,13],[9,48],[40,48]].forEach(([dx,dy])=>blockRect(g,x+dx,y+dy,7,9,'#39a861','pixel-tree'));
+      } else {
+        [0,1,2].forEach(slot=>blockRect(g,x+7,y+13+slot*15,w-14,3,'#7f8d96','pixel-roadmark'));
+        [[10,7],[35,52]].forEach(([dx,dy])=>blockRect(g,x+dx,y+dy,7,9,'#39a861','pixel-tree'));
+      }
+      const aboveBankLot=renderPhase==='GETAWAY'&&index===0;
+      (aboveBankLot?bankFrontBuilding:cityPackAsset?.completeLot?lotSurface:cityLayer).append(g);
+    });
+    if(renderPhase==='CLEANUP'){
+      [90,145].forEach(x=>landmarkForeground.append(el('image',{href:'tiled/tilesets/TopDown Vehicles v1/TAXI TOPDOWN/MOVE/WEST/SEPARATED/TAXI_CLEAN_WEST_000.png',x,y:58,width:48,height:48,class:'city-pack-asset airport-pickup-vehicle','aria-hidden':'true'})));
+      const s=el('svg',{x:200,y:58,width:48,height:48,viewBox:'0 0 100 100',class:'airport-pickup-vehicle'});s.append(el('image',{href:'tiled/tilesets/TopDown Vehicles v1/MINIVAN TOPDOWN/Black/Black_MINIVAN_CLEAN_8D_000-sheet.png',x:0,y:0,width:300,height:300,class:'city-pack-asset','aria-hidden':'true'}));landmarkForeground.append(s);
+    }
+  }
+  const phaseTwoEdges=()=>[...MAP_DATA.edges.filter(edge=>!PHASE_TWO_REMOVED.some(removed=>MAP_DATA.edgeKey(...removed)===MAP_DATA.edgeKey(...edge))),...PHASE_TWO_ADDED];
+  const phaseEdges=()=>phase==='GETAWAY'?[...MAP_DATA.edges]:phaseTwoEdges();
+  const activeMap=()=>({...MAP_DATA,edges:phaseEdges()});
+  const activeLayout=()=>({blocked:[...MAP_DATA.roadblockLayouts[layoutIndex].blocked.filter(edge=>phase==='GETAWAY'||MAP_DATA.edgeKey(...edge)!==MAP_DATA.edgeKey('n24','n34')),...dynamicBlocked]});
+  const blockedSet=()=>new Set(activeLayout().blocked.map(e=>MAP_DATA.edgeKey(...e)));
+  const roadNetwork=()=>GETAWAY_RULES.graph(activeMap(),activeLayout());
+  function withoutNode(roads,node){
+    const result=new Map([...roads].map(([id,links])=>[id,links.filter(link=>link!==node)]));result.set(node,[]);return result;
+  }
+  const network=()=>phase==='CLEANUP'&&bus?withoutNode(roadNetwork(),bus.node):roadNetwork();
+  const neighbours=id=>network().get(id)||[];
+  const vehicleState=()=>Object.fromEntries([['PLAYER',pos],...(pursuer?[[pursuitState==='CAR_SWITCHED'?'P3':'PURSUER',pursuer]]:[]),...patrols.map((patrol,index)=>[`P${index+1}`,patrol.current]),...(phase==='CLEANUP'?objectives.filter(task=>!task.complete).map(task=>[task.id,task.node]):[]),...(phase==='CLEANUP'&&bus?[['BUS',bus.node]]:[])]);
+  function playerHeading(){
+    if(!previousPos||!positions[previousPos]||!positions[pos]||previousPos===pos)return null;
+    const [fromX,fromY]=positions[previousPos],[toX,toY]=positions[pos];
+    return Math.atan2(toY-fromY,toX-fromX)*180/Math.PI;
+  }
+  function travelHeading(from,to){
+    if(!from||!to||!positions[from]||!positions[to]||from===to)return null;
+    const [fromX,fromY]=positions[from],[toX,toY]=positions[to];return Math.atan2(toY-fromY,toX-fromX)*180/Math.PI;
+  }
+  function contactDirection(policeHeading){
+    const heading=playerHeading();if(heading===null||policeHeading===null)return 'INTERCEPTED';
+    const difference=Math.abs(((policeHeading-heading+540)%360)-180);
+    if(difference>=135)return 'INTERCEPTED';
+    if(difference<=45)return 'POLICE_MANEUVERS';
+    return 'T_BONED';
+  }
+  const directionUnit=heading=>({x:Math.cos((heading??0)*Math.PI/180),y:Math.sin((heading??0)*Math.PI/180)});
+  function contactOffsets(direction,playerDirection,policeDirection,policeId){
+    const playerUnit=directionUnit(playerDirection),policeUnit=directionUnit(policeDirection);
+    if(direction==='INTERCEPTED'){const roadblockUnit=directionUnit((playerDirection??0)-45);return {PLAYER:{x:-roadblockUnit.x*20,y:-roadblockUnit.y*20},[policeId]:{x:roadblockUnit.x*20,y:roadblockUnit.y*20}};}
+    if(direction==='T_BONED')return {PLAYER:{x:policeUnit.x*6,y:policeUnit.y*6},[policeId]:{x:-policeUnit.x*17,y:-policeUnit.y*17}};
+    return {PLAYER:{x:playerUnit.x*12,y:playerUnit.y*12},[policeId]:{x:-playerUnit.x*17,y:-playerUnit.y*17}};
+  }
+  function forwardStreetNode(){
+    if(!previousPos||!positions[previousPos]||!positions[pos])return null;
+    const [fromX,fromY]=positions[previousPos],[atX,atY]=positions[pos],dx=atX-fromX,dy=atY-fromY,length=Math.hypot(dx,dy);
+    if(!length)return null;
+    const candidates=(roadNetwork().get(pos)||[]).map(node=>{const [x,y]=positions[node],nx=x-atX,ny=y-atY,nLength=Math.hypot(nx,ny);return {node,alignment:(dx*nx+dy*ny)/(length*nLength)};}).filter(candidate=>candidate.alignment>.9).sort((a,b)=>b.alignment-a.alignment);
+    return candidates[0]?.node||null;
+  }
+  const headingFrame=angle=>((5+Math.round(angle/45))%8+8)%8;
+  const luxuryFrame=angle=>[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2]][((Math.round(angle/45)%8)+8)%8];
+  function animateVehicles(previous,current){
+    const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches,animations=[];
+    Object.entries(current).forEach(([id,to])=>{
+      const element=document.querySelector(`[data-vehicle="${id}"]`),from=previous[id];
+      if(!element||!from||from===to)return;
+      const [fromX,fromY]=positions[from],[nodeX,nodeY]=positions[to],offset=collisionVisualOffsets[id]||{x:0,y:0},toX=nodeX+offset.x,toY=nodeY+offset.y,angle=Math.atan2(nodeY-fromY,nodeX-fromX)*180/Math.PI,visualHeading=collisionVisualHeadings[id]??angle;
+      vehicleHeadings[id]=visualHeading;element.style.transform=`translate(${toX}px,${toY}px)`;
+      const sprite=element.querySelector('.vehicle-sprite');if(sprite){const size=Number(sprite.getAttribute('data-frame-size')||48);if(sprite.getAttribute('data-luxury-sheet')==='true'){const [col,row]=luxuryFrame(visualHeading);sprite.setAttribute('x',String(-size/2-col*size));sprite.setAttribute('y',String(-size/2-row*size));}else sprite.setAttribute('x',String(-size/2-headingFrame(visualHeading)*size));}
+      const adjacent=phaseEdges().some(edge=>MAP_DATA.edgeKey(...edge)===MAP_DATA.edgeKey(from,to));
+      if(reduced)return;
+      if(adjacent)animations.push(element.animate([{transform:`translate(${fromX}px,${fromY}px)`},{transform:`translate(${toX}px,${toY}px)`}],{duration:380,easing:'ease-in-out'}));
+      else animations.push(element.animate([{opacity:0},{opacity:1}],{duration:260,easing:'ease-out'}));
+    });
+    if(animations.length){animating=true;movementFinished=Promise.allSettled(animations.map(animation=>animation.finished)).then(()=>{animating=false;});}
+    else movementFinished=Promise.resolve();
+    return movementFinished;
+  }
+  function playAirportTakeoff(){
+    if(takeoffPlayed)return Promise.resolve();takeoffPlayed=true;
+    const plane=document.querySelector('.airport-plane');if(!plane)return Promise.resolve();
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){plane.style.opacity='0';return Promise.resolve();}
+    const animation=plane.animate([
+      {offset:0,transform:'translate(0,0) scale(1)',opacity:1},
+      {offset:.04,transform:'translate(-2px,1px) scale(1)'},
+      {offset:.08,transform:'translate(2px,-1px) scale(1)'},
+      {offset:.12,transform:'translate(-1px,-1px) scale(1)'},
+      {offset:.16,transform:'translate(2px,1px) scale(1)'},
+      {offset:.20,transform:'translate(0,0) scale(1)'},
+      {offset:.45,transform:'translate(30px,0) scale(1.03)'},
+      {offset:.68,transform:'translate(90px,-2px) scale(1.07)'},
+      {offset:.86,transform:'translate(170px,-7px) scale(1.10)',opacity:1},
+      {offset:1,transform:'translate(280px,-14px) scale(1.10)',opacity:0}
+    ],{duration:2400,easing:'ease-in',fill:'forwards'});return animation.finished.catch(()=>{});
+  }
+  function resetAirportPlane(){
+    const plane=document.querySelector('.airport-plane');if(!plane)return;
+    plane.getAnimations().forEach(animation=>animation.cancel());plane.style.opacity='';plane.style.transform='';takeoffPlayed=false;
+  }
+  function playHeldFlight(){
+    const plane=document.querySelector('.airport-plane');if(!plane)return Promise.resolve();
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return Promise.resolve();
+    const animation=plane.animate([
+      {transform:'translate(0,0)'},{transform:'translate(-2px,1px)'},{transform:'translate(2px,-1px)'},
+      {transform:'translate(-1px,-1px)'},{transform:'translate(2px,1px)'},{transform:'translate(0,0)'},
+      {transform:'translate(18px,0)'},{transform:'translate(23px,0)'}
+    ],{duration:1250,easing:'ease-out',fill:'forwards'});return animation.finished.catch(()=>{});
+  }
+  function readLocalRuns(){try{const value=JSON.parse(localStorage.getItem(LOG_KEY)||'[]');return Array.isArray(value)?value:[]}catch{return[]}}
+  let runArchive=readLocalRuns(),runDatabase=null,storageWarning='';
+  const readRuns=()=>runArchive;
+  function openRunDatabase(){
+    return new Promise((resolve,reject)=>{const request=indexedDB.open(RUN_DB,1);request.onupgradeneeded=()=>request.result.createObjectStore(RUN_STORE,{keyPath:'id'});request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+  }
+  function databaseRequest(mode,operation){
+    return new Promise((resolve,reject)=>{const transaction=runDatabase.transaction(RUN_STORE,mode),request=operation(transaction.objectStore(RUN_STORE));request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+  }
+  async function initializeRunStorage(){
+    try{
+      runDatabase=await openRunDatabase();
+      const stored=await databaseRequest('readonly',store=>store.getAll()),merged=new Map(stored.map(run=>[run.id,run]));
+      runArchive.forEach(run=>merged.set(run.id,run));runArchive=[...merged.values()].sort((a,b)=>String(a.startedAt).localeCompare(String(b.startedAt)));
+      await Promise.all(runArchive.map(run=>databaseRequest('readwrite',store=>store.put(run))));storageWarning='';updateHistory();
+    }catch(error){storageWarning='Run database unavailable. New runs may not survive a reload.';updateHistory();}
+  }
+  async function saveRun(run){
+    runArchive.push(run);
+    try{localStorage.setItem(LOG_KEY,JSON.stringify(runArchive));}catch{storageWarning='Legacy storage is full; runs remain saved in the larger game database.';}
+    try{if(!runDatabase)runDatabase=await openRunDatabase();await databaseRequest('readwrite',store=>store.put(run));storageWarning='';}
+    catch(error){storageWarning='Run could not be saved permanently. Download the log before closing this page.';}
+    updateHistory();
+  }
+  const patrolSnapshot=()=>patrols.map((patrol,index)=>({id:`P${index+1}`,patternId:patrol.patternId,current:patrol.current,waypointIndex:patrol.waypointIndex,destination:MAP_DATA.levelOnePatrols[index].patterns.find(pattern=>pattern.id===patrol.patternId).waypoints[patrol.waypointIndex],previousWaypoint:patrol.previousWaypoint}));
+  const objectiveSnapshot=()=>({phase,flightTurnsRemaining,flightAttempt,knownAssociateAfterTurn,knownAssociateActive:knownAssociateAfterTurn!==null&&turns>=knownAssociateAfterTurn,protectedDeparture,carSwitch:{node:carSwitch.node,used:carSwitch.used},tasks:objectives.map(task=>({id:task.id,node:task.node,routeId:task.routeId,routeIndex:task.routeIndex,direction:task.direction,pending:task.pending,complete:task.complete})),bus:bus?{node:bus.node,routeIndex:bus.routeIndex,tick:bus.tick}:null,pursuitState});
+  function recordEvent(action,eventPhase,card=null,detail=null){currentRun.events.push({turn:turns,action,phase:eventPhase,mapPhase:phase,player:pos,previousPlayer:previousPos,playerHeading:playerHeading(),pursuer,pursuitState,patrols:patrolSnapshot(),objectives:objectiveSnapshot(),card,detail,dynamicBlocked:dynamicBlocked.map(edge=>[...edge])});}
+  function beginRun(){
+    cardState={card:null,triggerNode:null,resolved:false};cardCheckedNodes=new Set();
+    currentRun={schema:LOG_SCHEMA,id:`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,startedAt:new Date().toISOString(),layout:MAP_DATA.roadblockLayouts[layoutIndex].name,blocked:MAP_DATA.roadblockLayouts[layoutIndex].blocked.map(edge=>[...edge]),assignedCard:null,cardTriggerNode:null,initialPatrols:patrolSnapshot(),initialObjectives:objectiveSnapshot(),events:[],outcome:null,captureBy:null,totalTurns:null};
+    recordEvent(null,'START');
+  }
+  function finishRun(outcome,captureBy=null){
+    if(!currentRun||currentRun.outcome)return;
+    currentRun.outcome=outcome;currentRun.captureBy=captureBy;currentRun.totalTurns=turns;currentRun.completedAt=new Date().toISOString();
+    saveRun(currentRun);updateHistory();
+  }
+  function conclude(outcome,captureBy,phase){
+    ended=true;recordEvent(pos,phase);finishRun(outcome,captureBy);
+    outcomeMessage=outcome==='ESCAPED_AIRPORT'?`Crew paid. You reached the airport in ${turns} road turns.`:`Captured by ${captureBy} after ${turns} turns.`;
+  }
+  function missFlight(reason){
+    if(flightTransitioning)return;flightTransitioning=true;
+    flightTurnsRemaining=0;recordEvent(pos,'FLIGHT_MISSED',{id:flightAttempt===1?'FIRST_FLIGHT_DEPARTED':'SECOND_FLIGHT_DEPARTED'},{reason,flightAttempt});
+    const runId=currentRun?.id;animating=true;draw();const finalRoadMotion=movementFinished;
+    finalRoadMotion.then(()=>{playAirportTakeoff();return new Promise(resolve=>setTimeout(resolve,2500));}).then(()=>{
+      if(currentRun?.id!==runId)return;animating=false;
+      if(flightAttempt===1){
+        showCard('First Flight Departed','You missed the first flight. The next one leaves in 21 minutes. Get to the airport.',[{label:'Make the second flight',action:()=>{hideCard();flightAttempt=2;flightTurnsRemaining=SECOND_FLIGHT_WINDOW;flightTransitioning=false;resetAirportPlane();recordEvent(pos,'SECOND_FLIGHT_WINDOW_OPENED',{id:'SECOND_FLIGHT'},{flightTurnsRemaining});draw();}}]);
+      } else {
+        ended=true;finishRun('MISSED_SECOND_FLIGHT','SECOND_FLIGHT_DEPARTED');outcomeMessage=`The second flight departed after ${turns} road turns.`;
+        showSecondFlightCard();
+      }
+    });
+  }
+  function resolveAirportArrival(){
+    if(flightAttempt===1){
+      ended=true;finishRun('ESCAPED_AIRPORT',null);outcomeMessage=`Crew paid. You reached the airport in ${turns} road turns.`;
+      const runId=currentRun?.id;animating=true;draw();
+      playAirportTakeoff().then(()=>{if(currentRun?.id!==runId)return;animating=false;showGetawayCard();});
+      return;
+    }
+    const roll=Math.random();recordEvent(pos,'SECOND_FLIGHT_RESOLVED',{id:roll<.5?'SECOND_FLIGHT_ESCAPE':roll<.75?'FLIGHT_HELD':'AIRPORT_AMBUSH'},{roll});
+    if(roll<.5){
+      finishRun('ESCAPED_AIRPORT',null);outcomeMessage=`Crew paid. You reached the airport in ${turns} road turns.`;
+      const runId=currentRun?.id;animating=true;draw();
+      playAirportTakeoff().then(()=>{if(currentRun?.id!==runId)return;animating=false;showGetawayCard();});
+      return;
+    }
+    ended=true;
+    if(roll<.75){
+      finishRun('ARRESTED_FLIGHT_HELD','AIRPORT_SECURITY');outcomeMessage='The second flight was held and you were arrested.';animating=true;draw();
+      playHeldFlight().then(()=>{animating=false;showFlightHeldCard();});
+    } else {
+      const arrivalHeading=travelHeading(previousPos,pos)??vehicleHeadings.PLAYER??0,travel=directionUnit(arrivalHeading);
+      airportAmbush=true;collisionVisualOffsets={PLAYER:{x:travel.x*14,y:travel.y*14},AIRPORT_CHECKPOINT:{x:-travel.x*28,y:-travel.y*28}};vehicleHeadings.AIRPORT_CHECKPOINT=arrivalHeading;
+      finishRun('ARRESTED_AIRPORT_AMBUSH','AIRPORT_CHECKPOINT');outcomeMessage='Police were waiting at the airport.';animating=true;draw();
+      setTimeout(()=>{animating=false;showTheyWereWaitingCard();},420);
+    }
+  }
+  function mapTwoContactRoll(){
+    if(knownAssociateAfterTurn!==null&&turns>=knownAssociateAfterTurn)return {id:'KNOWN_ASSOCIATE',roll:null,tier:'KNOWN_ASSOCIATE'};
+    const roll=Math.random(),perimeter=AIRPORT_PERIMETER.has(pos),danger=perimeter ? .9 : .8;
+    if(roll<danger/2)return {id:'RECOGNIZED',roll,tier:perimeter?'AIRPORT_PERIMETER':'ORDINARY'};
+    if(roll<danger)return {id:'MATCHING_DESCRIPTION',roll,tier:perimeter?'AIRPORT_PERIMETER':'ORDINARY'};
+    const release=(roll-danger)/(1-danger);
+    if(release<.5)return {id:'ROUTINE_STOP',roll,tier:perimeter?'AIRPORT_PERIMETER':'ORDINARY'};
+    if(release<.75)return {id:'CALLED_AWAY',roll,tier:perimeter?'AIRPORT_PERIMETER':'ORDINARY'};
+    return {id:'WRONG_CAR',roll,tier:perimeter?'AIRPORT_PERIMETER':'ORDINARY'};
+  }
+  function moveContactingPoliceAway(source){
+    const roads=roadNetwork(),occupied=new Set([pos,bus?.node,...patrols.map(patrol=>patrol.current),pursuer].filter(Boolean)),choose=from=>(roads.get(from)||[]).filter(node=>node!==pos&&!occupied.has(node));
+    if(source==='P3'){
+      const options=choose(pursuer);if(!options.length)return false;const from=pursuer;pursuer=options[Math.floor(Math.random()*options.length)];if(roamingPursuer)roamingPursuer.current=pursuer;recordEvent(pos,'CONTACTING_POLICE_RELEASED',null,{source,from,to:pursuer});return true;
+    }
+    const index=Number(source.slice(1))-1,patrol=patrols[index],options=patrol?choose(patrol.current):[];if(!options.length)return false;
+    const from=patrol.current;patrol.current=options[Math.floor(Math.random()*options.length)];recordEvent(pos,'CONTACTING_POLICE_RELEASED',null,{source,from,to:patrol.current});return true;
+  }
+  function stageMapTwoPoliceContact(source,policeFrom,reveal){
+    const policeId=source==='P3'?'P3':source,heading=playerHeading()??vehicleHeadings.PLAYER??0,side=directionUnit(heading+90),runId=currentRun?.id;
+    collisionVisualOffsets={PLAYER:{x:-side.x*24,y:-side.y*24},[policeId]:{x:side.x*24,y:side.y*24}};animating=true;visualPositions=vehicleState();draw();
+    setTimeout(()=>{if(currentRun?.id!==runId)return;animating=false;reveal();},320);
+  }
+  function resolveMapTwoPoliceContact(source,eventPhase,policeFrom){
+    const result=mapTwoContactRoll(),card=MAP_TWO_CONTACTS[result.id];recordEvent(pos,'MAP_TWO_POLICE_CONTACT',{id:result.id},{source,eventPhase,policeFrom,roll:result.roll,tier:result.tier,flightTurnsRemaining});
+    if(card.terminal){ended=true;finishRun('PATROL_CAPTURE',source);outcomeMessage=`${card.title}: captured by ${source} after ${turns} turns.`;stageMapTwoPoliceContact(source,policeFrom,()=>card.title==='Recognized'?showRecognizedCard(card.title,card.text):card.title==='Matching the Description'?showMatchingDescriptionCard(card.title,card.text):showKnownAssociateCard(card.title,card.text));return;}
+    stageMapTwoPoliceContact(source,policeFrom,()=>showCard(card.title,card.text,[{label:'Continue',action:()=>{flightTurnsRemaining=Math.max(0,flightTurnsRemaining-card.delay);recordEvent(pos,'POLICE_DELAY_RESOLVED',{id:result.id},{source,delay:card.delay,flightTurnsRemaining});collisionVisualOffsets={};hideCard();if(!flightTurnsRemaining){missFlight('POLICE_DELAY');return;}moveContactingPoliceAway(source);draw();}}]));
+  }
+  function concludePoliceContact(outcome,captureBy,eventPhase,policeFrom,policeHeading=null,initiator='POLICE'){
+    if(phase!=='GETAWAY'){resolveMapTwoPoliceContact(captureBy,eventPhase,policeFrom);return;}
+    const approachHeading=policeHeading??travelHeading(policeFrom,pos),direction=contactDirection(approachHeading);
+    const card=CONTACT_CARDS[direction],policeId=captureBy==='PURSUER'?'PURSUER':captureBy,impactOffsets=contactOffsets(direction,playerHeading(),approachHeading,policeId);collisionVisualOffsets=impactOffsets;
+    collisionVisualHeadings=direction==='INTERCEPTED'?{PLAYER:(playerHeading()??0)-45,[policeId]:(approachHeading??180)-45}:{};
+    ended=true;recordEvent(pos,eventPhase,{id:direction},{captureBy,initiator,policeFrom,policeTo:pos,playerHeading:playerHeading(),policeHeading:approachHeading,direction,impactOffsets});finishRun(outcome,captureBy);
+    outcomeMessage=`${card.title}: captured by ${captureBy} after ${turns} turns.`;
+    pendingContactCard=card;
+  }
+  function maybeTriggerImpasse(){
+    if(ended||awaitingCard||protectedDeparture)return false;
+    const police=new Set([pursuer,...patrols.map(patrol=>patrol.current)].filter(Boolean));
+    const exits=neighbours(pos),safeExits=exits.filter(node=>!police.has(node));
+    if(safeExits.length)return false;
+    const heading=playerHeading(),forwardNode=forwardStreetNode(),forwardObstruction=forwardNode?(police.has(forwardNode)?'POLICE':bus?.node===forwardNode?'BUS':'NONE'):'NO_FORWARD_STREET';
+    const ending=forwardObstruction==='POLICE'
+      ?{title:'You Fought the Law',text:'The law won.',outcome:'KILLED_BREAKOUT',event:'IMPASSE_BREAKOUT_FAILED',button:'Play Again'}
+      :{title:"You're Surrounded",text:'Every street is covered. There is nowhere left to drive.',outcome:'SURRENDERED',event:'IMPASSE_SURRENDERED',button:'Give up'};
+    ended=true;
+    recordEvent(pos,ending.event,{id:ending.outcome},{exits,police:[...police],bus:bus?.node||null,previousPlayer:previousPos,heading,forwardNode,forwardObstruction});
+    finishRun(ending.outcome,'SURROUNDED');
+    outcomeMessage=ending.outcome==='SURRENDERED'?`Surrounded and arrested after ${turns} turns.`:`Killed attempting to break the cordon after ${turns} turns.`;
+    const runId=currentRun?.id;draw();const surroundingMotion=movementFinished;
+    surroundingMotion.then(()=>setTimeout(()=>{if(currentRun?.id!==runId||currentRun?.outcome!==ending.outcome)return;showTerminalCard(ending.title,ending.text,ending.button,ending.outcome);},320));
+    return true;
+  }
+  function download(name,type,text){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}
+  function exportStamp(){return new Date().toISOString().replace(/\.\d{3}Z$/,'Z').replaceAll(':','').replace('T','-');}
+  function csvCell(value){const text=String(value??'');return `"${text.replaceAll('"','""')}"`;}
+  async function downloadJSON(){
+    const text=JSON.stringify({schema:LOG_SCHEMA,exportedAt:new Date().toISOString(),runs:readRuns()},null,2),name=`getaway-grid-runs-${exportStamp()}.json`;
+    if(window.showSaveFilePicker){
+      try{const handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'JSON run log',accept:{'application/json':['.json']}}]});const writable=await handle.createWritable();await writable.write(text);await writable.close();return;}
+      catch(error){if(error&&error.name==='AbortError')return;}
+    }
+    download(name,'application/json',text);
+  }
+  function downloadCSV(){
+    const rows=[['run_id','layout','assigned_card','card_trigger_node','initial_objectives','outcome','capture_by','total_turns','event_turn','action','phase','map_phase','player','previous_player','player_heading','pursuer','pursuit_state','objectives','P1_pattern','P1','P2_pattern','P2','card','detail','dynamic_blocked']];
+    readRuns().forEach(run=>run.events.forEach(event=>rows.push([run.id,run.layout,run.assignedCard,run.cardTriggerNode,JSON.stringify(run.initialObjectives||{}),run.outcome,run.captureBy,run.totalTurns,event.turn,event.action,event.phase,event.mapPhase,event.player,event.previousPlayer,event.playerHeading,event.pursuer,event.pursuitState,JSON.stringify(event.objectives||{}),event.patrols[0]?.patternId,event.patrols[0]?.current,event.patrols[1]?.patternId,event.patrols[1]?.current,event.card?JSON.stringify(event.card):'',event.detail?JSON.stringify(event.detail):'',JSON.stringify(event.dynamicBlocked||[])])));
+    download(`getaway-grid-runs-${exportStamp()}.csv`,'text/csv',rows.map(row=>row.map(csvCell).join(',')).join('\n'));
+  }
+  function updateHistory(){
+    const panel=document.getElementById('history'),runs=readRuns(),decided=runs.filter(run=>run.outcome!=='ABANDONED'),wins=decided.filter(run=>run.outcome==='ESCAPED_AIRPORT');
+    const rate=decided.length?Math.round(wins.length/decided.length*100):0;
+    panel.replaceChildren();
+    const top=document.createElement('div');top.innerHTML=`<b>${wins.length} wins in ${decided.length} completed runs (${rate}%)</b><br>${runs.length-decided.length} abandoned runs retained separately.${storageWarning?`<br><strong>${storageWarning}</strong>`:''}`;panel.append(top);
+    MAP_DATA.roadblockLayouts.forEach(layout=>{const subset=decided.filter(run=>run.layout===layout.name),won=subset.filter(run=>run.outcome==='ESCAPED_AIRPORT').length,row=document.createElement('div');row.className='history-row';row.append(Object.assign(document.createElement('span'),{textContent:layout.name}),Object.assign(document.createElement('span'),{textContent:subset.length?`${won}/${subset.length} wins`:'no completed runs'}));panel.append(row);});
+  }
+  function vehicle(layer,at,kind,label='',id=''){
+    const [x,y]=positions[at],offset=collisionVisualOffsets[id]||{x:0,y:0},frame=headingFrame(collisionVisualHeadings[id]??vehicleHeadings[id]??0),g=el('g',{'data-vehicle':id});g.style.transform=`translate(${x+offset.x}px,${y+offset.y}px)`;g.style.transformOrigin='0 0';
+    if(kind==='patrol'||kind==='pursuer')g.append(el('circle',{cx:0,cy:0,r:17,class:'police-halo'}));
+    g.append(el('image',{href:'assets/vehicles/minzinn/police-car-8dir-v1.png',x:-24-frame*48,y:-24,width:384,height:48,'clip-path':'url(#car-frame)',class:'vehicle-sprite'}));
+    if(label){const t=el('text',{x:0,y:3,class:'patrol-label'});t.textContent=label;g.append(t);}
+    g.setAttribute('data-depth-y',y+offset.y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);
+  }
+  function crewVehicle(task){
+    const [x,y]=positions[task.node],offset=rendezvousVisualOffsets[task.id]||{x:0,y:0},nextNode=task.route[(task.routeIndex+task.direction+task.route.length)%task.route.length],[nextX,nextY]=positions[nextNode],initialHeading=Math.atan2(nextY-y,nextX-x)*180/Math.PI,[col,row]=luxuryFrame(vehicleHeadings[task.id]??initialHeading),g=el('g',{'data-vehicle':task.id,class:'crew-marker'});g.style.transform=`translate(${x+offset.x}px,${y+offset.y}px)`;g.style.transformOrigin='0 0';
+    const tap=el('circle',{cx:0,cy:0,r:23,class:'crew-tap-target','aria-label':`Move to ${task.short}`});tap.addEventListener('click',()=>move(task.node));g.append(tap);
+    const money=el('g',{class:'money-marker','aria-hidden':'true'});money.setAttribute('transform',`translate(${x+offset.x},${y+offset.y-34})`);money.append(el('path',{class:'bag',d:'M-7,-6 Q-7,-9 0,-9 Q7,-9 7,-6 L6,7 Q0,11 -6,7 Z'}),el('path',{class:'tie',d:'M-3,-7 Q0,-13 3,-7 L2,-4 L-2,-4 Z'}),Object.assign(el('text',{x:0,y:2}),{textContent:'$'}));objectiveLayer.append(money);
+    const haloColor=task.style==='crew-green'?'#63d786':'#b883e8';
+    g.append(el('circle',{cx:0,cy:0,r:17,fill:haloColor,stroke:haloColor,class:'crew-halo'}));
+    g.append(el('image',{href:task.sprite,x:-24-col*48,y:-24-row*48,width:144,height:144,'clip-path':'url(#car-frame)','data-luxury-sheet':'true',class:'crew-car vehicle-sprite'}));
+    g.setAttribute('data-depth-y',y+offset.y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);
+  }
+  function drawBus(){
+    if(!bus)return;
+    const size=75,[x,y]=positions[bus.node],next=BUS_ROUTE[(bus.routeIndex+1)%BUS_ROUTE.length],[nextX,nextY]=positions[next],initialHeading=Math.atan2(nextY-y,nextX-x)*180/Math.PI,[col,row]=luxuryFrame(vehicleHeadings.BUS??initialHeading),g=el('g',{'data-vehicle':'BUS'});g.style.transform=`translate(${x}px,${y}px)`;g.style.transformOrigin='0 0';
+    g.append(el('image',{href:'assets/vehicles/white-bus-8dir.png',x:-size/2-col*size,y:-size/2-row*size,width:size*3,height:size*3,'clip-path':'url(#bus-frame)','data-luxury-sheet':'true','data-frame-size':size,class:'vehicle-sprite stationary-vehicle'}));g.setAttribute('data-depth-y',y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);
+  }
+  function drawFlightClock(renderPhase=phase){
+    if(renderPhase!=='CLEANUP'||flightTurnsRemaining===null)return;
+    const group=el('g',{class:'flight-clock','aria-label':'Flight departure clock'}),box=el('rect',{x:18,y:530,width:132,height:48,rx:5});group.append(box);
+    const elapsed=protectedDeparture?0:(flightAttempt===1?(FLIGHT_WINDOW-flightTurnsRemaining)*3:(21-(flightTurnsRemaining*3))),currentMinutes=(flightAttempt===1?18*60:19*60)+elapsed;
+    const format=minutes=>{const hour=Math.floor(minutes/60)%24,minute=String(minutes%60).padStart(2,'0');return `${hour%12||12}:${minute} ${hour>=12?'PM':'AM'}`;};
+    const time=el('text',{x:28,y:550});time.textContent=`TIME ${format(currentMinutes)}`;
+    const departure=el('text',{x:28,y:568});departure.textContent=`FLIGHT ${format(flightAttempt===1?19*60:19*60+21)}`;
+    group.append(time,departure);landmarkForeground.append(group);
+  }
+  function sortDepthSprites(){
+    [...depthLayer.children].sort((a,b)=>{
+      const difference=Number(a.getAttribute('data-depth-y'))-Number(b.getAttribute('data-depth-y'));
+      if(difference)return difference;
+      return (a.getAttribute('data-depth-kind')==='vehicle'?1:0)-(b.getAttribute('data-depth-kind')==='vehicle'?1:0);
+    }).forEach(sprite=>depthLayer.append(sprite));
+  }
+  function draw(){
+    const previousVisual={...visualPositions};
+    const renderPhase=previewPhase||phase,previewing=previewPhase!==null;
+    const renderEdges=renderPhase==='GETAWAY'?[...MAP_DATA.edges]:phaseTwoEdges();
+    const renderBlocked=new Set([...MAP_DATA.roadblockLayouts[layoutIndex].blocked.filter(edge=>renderPhase==='GETAWAY'||MAP_DATA.edgeKey(...edge)!==MAP_DATA.edgeKey('n24','n34')),...(renderPhase===phase?dynamicBlocked:[])].map(edge=>MAP_DATA.edgeKey(...edge)));
+    depthLayer.replaceChildren();beds.replaceChildren();lotSurface.replaceChildren();streets.replaceChildren();bankUnderlay.replaceChildren();bankFrontBuilding.replaceChildren();plazaDecor.replaceChildren();roadblockSigns.replaceChildren();nodes.replaceChildren();objectiveLayer.replaceChildren();policeLayer.replaceChildren();carLayer.replaceChildren();landmarkForeground.replaceChildren();drawCityBlocks(renderPhase);drawExteriorContext(renderPhase);
+    [...[[-18,72],[446,166],[6,292],[468,382],[-20,468],[438,506]].entries()].forEach(([index,[x,y]])=>{
+      landmarkForeground.append(el('ellipse',{cx:x+26,cy:y+57,rx:24,ry:4,class:'decorative-cloud-shadow','aria-hidden':'true'}));
+      landmarkForeground.append(el('image',{href:index%2?'assets/weather/decorative-cloud-v2-source.png':'assets/weather/decorative-cloud-v1-source.png',x,y:y-36,width:52,height:62,class:`city-pack-asset decorative-cloud${index%2?' decorative-cloud-variation':''}`,'aria-hidden':'true'}));
+    });
+    [[-18,116],[8,142],[428,124]].forEach(([x,y])=>{
+      landmarkForeground.append(el('ellipse',{cx:x+26,cy:y+57,rx:24,ry:4,class:'decorative-cloud-shadow','aria-hidden':'true'}));
+      landmarkForeground.append(el('image',{href:'assets/weather/decorative-cloud-v3-source.png',x,y:y-36,width:52,height:62,class:'city-pack-asset decorative-cloud decorative-cloud-variation','aria-hidden':'true'}));
+    });
+    {
+      const [x,y]=[100,526];
+      landmarkForeground.append(el('ellipse',{cx:x+39,cy:y+69,rx:35,ry:5,class:'decorative-cloud-shadow','aria-hidden':'true'}));
+      landmarkForeground.append(el('image',{href:'assets/weather/decorative-cloud-v4-source.png',x,y:y-36,width:78,height:93,class:'city-pack-asset decorative-cloud decorative-cloud-variation','aria-hidden':'true'}));
+    }
+    drawFlightClock(renderPhase);
+    const shortcutExits=shortcutSelecting?neighbours(pos):[];
+    const blocked=renderBlocked, legal=new Set(previewing||ended||awaitingCard||animating||flightTransitioning?[]:(shortcutSelecting?shortcutExits:neighbours(pos)));
+    renderEdges.forEach(([a,b])=>{
+      const [x1,y1]=positions[a],[x2,y2]=positions[b], key=MAP_DATA.edgeKey(a,b);
+      beds.append(el('line',{x1,y1,x2,y2,class:'street-bed'}));
+      streets.append(el('line',{x1,y1,x2,y2,class:'street'}));
+      streets.append(el('line',{x1,y1,x2,y2,class:'street-mark'}));
+      if(blocked.has(key)){
+        const segmentStart=.26,segmentEnd=.74;
+        roadblockSigns.append(el('line',{
+          x1:x1+(x2-x1)*segmentStart,y1:y1+(y2-y1)*segmentStart,
+          x2:x1+(x2-x1)*segmentEnd,y2:y1+(y2-y1)*segmentEnd,
+          class:'roadblock-indicator'
+        }));
+      }
+      if(key===MAP_DATA.edgeKey('n24','n34')&&blocked.has(key)){
+        const cx=(x1+x2)/2,cy=(y1+y2)/2;
+        [-35,35].forEach(offset=>roadblockSigns.append(el('image',{href:'assets/city/urban-exteriors/roadblock-barricade.png',x:cx-19,y:cy+offset-11,width:38,height:22,class:'roadblock-sign'})));
+      }
+    });
+    if(renderPhase==='GETAWAY'){
+      bankUnderlay.append(el('image',{href:'assets/city/generated-building-specimens/bank-parking-lot-complete-v3-transparent-138x92.png',x:40,y:0,width:138,height:92,class:'landmark-pixel'}));
+      bankUnderlay.append(el('image',{href:'assets/vehicles/bank-green-car-south-v1-transparent-16x27.png',x:43,y:17,width:21,height:35,class:'stationary-vehicle', 'aria-label':'Parked green car'}));
+    }
+    if(renderPhase==='CLEANUP'){
+      [[205,217],[284,217],[205,371],[284,371]].forEach(([x,y])=>plazaDecor.append(el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset plaza-tree'})));
+      [[207.5,305],[250,255],[292.5,305],[250,355]].forEach(([cx,cy])=>plazaDecor.append(el('image',{href:'assets/city/urban-exteriors/fountain-transparent.png',x:cx-16,y:cy-16,width:32,height:32,class:'city-pack-asset fountain'})));
+    }
+    if(!previewing&&phase==='CLEANUP')objectives.filter(task=>!task.complete).forEach(crewVehicle);
+    if(!previewing&&phase==='CLEANUP')drawBus();
+    MAP_DATA.nodes.forEach(n=>{
+      const [cx,cy]=positions[n.id], g=el('g',{'data-node':n.id});
+      if(n.outside){
+        g.append(el('circle',{cx,cy,r:30,class:`endpoint ${n.id}`}));
+        const landmark=n.id==='bank'?(renderPhase==='GETAWAY'?'BANK':'AIRPORT'):'HIDEOUT';drawLandmark(g,landmark,cx,cy);
+        if(n.id==='hideout'&&!previewing&&!ended&&phase==='GETAWAY'&&pos==='n44'){
+          const signal=el('g',{class:'hideout-signal','aria-label':'Click the hideout'});
+          signal.append(el('circle',{cx,cy:cy-34,r:13,class:'signal-glow'}));
+          signal.append(el('rect',{x:cx-5,y:cy-46,width:10,height:16,rx:2,class:'signal-housing'}));
+          signal.append(el('polygon',{points:`${cx-7},${cy-29} ${cx+7},${cy-29} ${cx},${cy-19}`,class:'hideout-arrow'}));
+          g.append(signal);
+        }
+      } else {
+        g.append(el('circle',{cx,cy,r:10,class:'intersection'+(legal.has(n.id)?' legal':'')}));
+        const label=el('text',{x:cx,y:cy+3,class:'intersection-label'});
+        label.textContent=String(n.row*5+n.col+1);g.append(label);
+        if(legal.has(n.id)){
+          const signal=el('g',{class:'move-signal','aria-hidden':'true'});
+          signal.append(el('circle',{cx,cy,r:11,class:'signal-glow'}));
+          signal.append(el('rect',{x:cx-4.5,y:cy-8,width:9,height:16,rx:2,class:'signal-housing'}));
+          signal.append(el('circle',{cx,cy:cy+3,r:3,class:'signal-green'}));
+          g.append(signal);
+        }
+      }
+      const hit=el('circle',{cx,cy,r:23,class:'tap-target','aria-label':`Move to ${n.id}`});
+      if(!previewing)hit.addEventListener('click',()=>shortcutSelecting?takeShortcut(n.id):move(n.id));g.append(hit);nodes.append(g);
+    });
+    nodes.append(el('image',{href:'assets/vehicles/hideout-car-south-v1-transparent-24x41.png',x:462,y:555,width:24,height:41,class:'city-pack-asset parked-hideout-car','aria-hidden':'true'}));
+    if(!previewing&&pursuer)vehicle(policeLayer,pursuer,pursuitState==='CAR_SWITCHED'?'patrol':'pursuer',pursuitState==='CAR_SWITCHED'?'P3':'',pursuitState==='CAR_SWITCHED'?'P3':'PURSUER');
+    if(!previewing)patrols.forEach((patrol,index)=>vehicle(policeLayer,patrol.current,'patrol',`P${index+1}`,`P${index+1}`));
+    if(!previewing&&airportAmbush)vehicle(policeLayer,'bank','patrol','', 'AIRPORT_CHECKPOINT');
+    const [x,y]=positions[pos],playerOffset=collisionVisualOffsets.PLAYER||rendezvousVisualOffsets.PLAYER||{x:0,y:0},initialPlayerHeading=phase==='GETAWAY'&&pos==='bank'&&turns===0?90:0,frame=headingFrame(collisionVisualHeadings.PLAYER??vehicleHeadings.PLAYER??initialPlayerHeading),g=el('g',{'data-vehicle':'PLAYER'});g.style.transform=`translate(${x+playerOffset.x}px,${y+playerOffset.y}px)`;g.style.transformOrigin='0 0';
+    const playerSprite=carSwitch.used&&!protectedDeparture?'assets/vehicles/minzinn/yellow-supercar-8dir-v1.png':'assets/vehicles/minzinn/red-musclecar-8dir-v1.png',playerSize=48;
+    g.append(el('image',{href:playerSprite,x:-playerSize/2-frame*playerSize,y:-playerSize/2,width:playerSize*8,height:playerSize,'clip-path':'url(#player-car-frame)',class:'vehicle-sprite'}));if(!previewing){g.setAttribute('data-depth-y',y+playerOffset.y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);}
+    sortDepthSprites();
+    if(!previewing&&(protectedDeparture||hideoutForegroundActive))drawLandmark(landmarkForeground,'HIDEOUT',...positions.hideout);
+    document.getElementById('map-preview').textContent=previewing?'Return to live map':phase==='GETAWAY'?'Preview Map 2':'Preview Map 1';
+    if(previewing)status.textContent=`Development preview · ${renderPhase==='GETAWAY'?'Map 1: bank to hideout':'Map 2: hideout to airport'} · gameplay paused.`;
+    else if(ended) status.textContent=outcomeMessage;
+    else if(awaitingCard)status.textContent=`Turn ${turns} · resolve the situation card.`;
+    else if(shortcutSelecting)status.textContent=`Turn ${turns} · choose a yellow parking-garage exit before police move.`;
+    else if(phase==='GETAWAY')status.textContent=debugMode?`Turn ${turns} · Reach the hideout/car switch · ${pursuitState.replaceAll('_',' ')} · tap a yellow intersection.`:`Turn ${turns} · Reach the hideout.`;
+    else if(protectedDeparture)status.textContent=debugMode?`Turn ${turns} · Map changed · emerging automatically onto node 25.`:`Turn ${turns} · Switching cars…`;
+    else status.textContent=`Turn ${turns} · ${flightAttempt===1?'Flight':'Second flight'} departs in ${flightTurnsRemaining} · Crew paid ${objectives.filter(task=>task.complete).length}/2 · reach the airport after both.`;
+    visualPositions=vehicleState();const motion=animateVehicles(previousVisual,visualPositions);
+    if(pendingContactCard){
+      const pending=pendingContactCard;
+      motion.then(()=>{if(pendingContactCard!==pending)return;pendingContactCard=null;if(pending===CONTACT_CARDS.T_BONED)showTbonedCard();else if(pending===CONTACT_CARDS.INTERCEPTED)showInterceptedCard();else if(pending===CONTACT_CARDS.POLICE_MANEUVERS)showPoliceManeuversCard(pending.title,pending.text);else showCard(pending.title,pending.text,[{label:'Play Again',action:()=>returnToTitle()}]);});
+    }
+    if(!previewing&&ended&&currentRun?.outcome==='ESCAPED_AIRPORT')requestAnimationFrame(playAirportTakeoff);
+  }
+  function newCrewObjective(route,index){
+    const allowed=route.waypoints.map((node,routeIndex)=>({node,routeIndex})).filter(start=>!CREW_START_EXCLUDED.has(start.node));
+    const start=allowed[Math.floor(Math.random()*allowed.length)];
+    const roads=GETAWAY_RULES.graph({...MAP_DATA,edges:phaseTwoEdges()},{blocked:[]}),count=route.waypoints.length;
+    const directions=[1,-1].map(direction=>({direction,distance:GETAWAY_RULES.shortestDistance(roads,'hideout',route.waypoints[(start.routeIndex+direction+count)%count])}));
+    const direction=directions.sort((a,b)=>b.distance-a.distance)[0].direction;
+    return {id:index===0?'PAY_DRIVER':'PAY_CONTACT',short:index===0?'DRIVER':'CONTACT',routeId:route.id,route:[...route.waypoints],routeIndex:start.routeIndex,direction,node:start.node,pending:false,complete:false,style:route.style,sprite:route.sprite};
+  }
+  function reset(reason='RESET'){
+    if(currentRun&&!currentRun.outcome&&turns>0){recordEvent(null,reason);finishRun('ABANDONED',reason);}
+    carSwitch={node:'hideout',used:false};objectives=CREW_ROUTES.map(newCrewObjective);
+    while(objectives[1].node===objectives[0].node||GETAWAY_RULES.shortestDistance(GETAWAY_RULES.graph({...MAP_DATA,edges:phaseTwoEdges()},{blocked:[]}),objectives[0].node,objectives[1].node)<3)objectives[1]=newCrewObjective(CREW_ROUTES[1],1);
+    previewPhase=null;pos='bank';phase='GETAWAY';turns=0;rainstormIndex=0;flightTurnsRemaining=null;flightAttempt=1;flightTransitioning=false;knownAssociateAfterTurn=null;pursuer=null;roamingPursuer=null;bus=null;pursuitState='IDENTIFIED';switchPending=false;protectedDeparture=false;hideoutForegroundActive=false;patrols=MAP_DATA.levelOnePatrols.map(config=>GETAWAY_RULES.newPatrol(config));ended=false;outcomeMessage='';dynamicBlocked=[];cardState=null;previousPos=null;awaitingCard=false;shortcutSelecting=false;cardCheckedNodes=new Set();animating=false;takeoffPlayed=false;airportAmbush=false;visualPositions={};vehicleHeadings={};pendingContactCard=null;collisionVisualOffsets={};collisionVisualHeadings={};rendezvousVisualOffsets={};document.getElementById('contact-demo').replaceChildren();hideCard();beginRun();draw();
+  }
+  function returnToTitle(){hideCard();reset('RETURN_TO_TITLE');const intro=document.getElementById('intro-backdrop');intro.hidden=false;intro.classList.add('staging');}
+  function showTbonedCard(){
+    showCard('T-Boned','Your getaway ends here.',[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('tboned-card');
+    const scene=document.createElement('div');scene.className='tboned-scene loading';scene.setAttribute('role','img');scene.setAttribute('aria-label','A police car strikes the red getaway car broadside at a city intersection.');
+    scene.innerHTML='<img class="tboned-background" src="assets/vignettes/t-boned-v1/background.png" alt=""><div class="tboned-action"><div class="tboned-red"><img class="tboned-intact" src="assets/vignettes/t-boned-v1/red-car-intact.png" alt=""><img class="tboned-damaged" src="assets/vignettes/t-boned-v1/red-car-damaged.png" alt=""></div><div class="tboned-police"><img src="assets/vignettes/t-boned-v1/police-car.png" alt=""></div></div>';
+    card.prepend(scene);
+    Promise.all([...scene.querySelectorAll('img')].map(image=>image.decode().catch(()=>{}))).then(()=>{if(scene.isConnected)scene.classList.remove('loading');});
+  }
+  function showInterceptedCard(){
+    showCard('Intercepted','The escape ends here.',[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('intercepted-card');
+    const scene=document.createElement('div');scene.className='intercepted-scene';scene.setAttribute('role','img');scene.setAttribute('aria-label','A red getaway car screeches to a nose-to-nose stop with a police car while two officers aim from clear pavement.');
+    scene.innerHTML='<img class="intercepted-background" src="assets/vignettes/intercepted-v1/background.png" alt=""><div class="intercepted-police"><img src="assets/vignettes/intercepted-v1/police-car-candidate.png" alt=""></div><img class="intercepted-officers" src="assets/vignettes/intercepted-v1/officers.png" alt=""><div class="intercepted-red"><img src="assets/vignettes/intercepted-v1/red-car.png" alt=""></div><div class="intercepted-chyron" aria-hidden="true"><b>BREAKING NEWS</b><span>POLICE INTERCEPT GETAWAY CAR</span></div>';
+    card.prepend(scene);
+    Promise.all([...scene.querySelectorAll('img')].map(image=>image.decode().catch(()=>{}))).then(()=>{if(scene.isConnected)scene.classList.remove('loading');});
+  }
+  function showShortcutCard(){
+    showCard(cardState.card.title,'A parking garage cuts through the block. Close this card, then choose a highlighted exit directly on the map.',[{label:'Choose an exit on the map',action:()=>{hideCard();shortcutSelecting=true;draw();}}]);
+    const card=document.querySelector('.situation-card');card.classList.add('shortcut-card');
+    const image=document.createElement('img');image.className='shortcut-art';image.src='assets/vignettes/parking-garage-shortcut-v1-candidate.png';image.alt='The red getaway car squeals into a parking garage.';card.prepend(image);
+  }
+  function showRoadClosedCard(detail){
+    showCard('Road Closed Ahead',detail,[{label:'Keep moving',action:()=>{hideCard();policeTurn();}}]);
+    const card=document.querySelector('.situation-card');card.classList.add('road-closed-card');
+    const image=document.createElement('img');image.className='road-closed-art';image.src='assets/vignettes/road-closed-v1-candidate.png';image.alt='The red getaway car reroutes around barricades blocking a city avenue.';card.prepend(image);
+  }
+  function showMapTwoBriefingCard(onClose){
+    showCard('Make the Drop','The money has to move. Find the cut men, deliver their shares, then get to the airport.',[{label:'Start deliveries',action:()=>{hideCard();onClose?.();}}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const image=document.createElement('img');image.className='terminal-art map2-briefing-art';image.src='assets/vignettes/map2-briefing-v1-candidate.png';image.alt='The getaway driver talks on the phone outside the hideout as a police car races past.';image.loading='eager';card.prepend(image);
+  }
+  function showGetawayCard(){
+    showCard('Getaway','Bank hit. Crew paid. Plane boarded. You scroll through the news as the flight attendant brings your whiskey. A job well done.',[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/first-flight-out-v1-candidate.png';image.alt='A relaxed traveler is served whiskey on a plane above the clouds while looking at a phone.';card.prepend(image);
+  }
+  function showSecondFlightCard(){
+    showCard('Second Flight Departed',"The last flight is gone. Looks like you've got other problems.",[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','second-flight-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/second-flight-missed-v1-candidate.png';image.alt='An airplane takes off ahead while a police car appears in the rearview mirror.';card.prepend(image);
+    const flash=document.createElement('div');flash.className='card-light-flash';flash.setAttribute('aria-hidden','true');card.append(flash);
+  }
+  function showFlightHeldCard(){
+    showCard('Flight Held',"You would have made it if you caught the first flight. You call your lawyer. This is going to take a while.",[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/flight-held-v1-candidate.png';image.alt='Police vehicles block an airport runway in front of a waiting plane.';card.prepend(image);
+  }
+  function showTheyWereWaitingCard(){
+    showCard('They Were Waiting','The replacement flight was never an escape route. The police were waiting.',[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','waiting-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/they-were-waiting-v1-candidate.png';image.alt='A police car waits behind the yellow getaway car at the airport with flashing lights.';card.prepend(image);
+    const flash=document.createElement('div');flash.className='card-light-flash';flash.setAttribute('aria-hidden','true');card.append(flash);
+  }
+  function showTerminalCard(title,text,button,outcome){
+    showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card',outcome==='SURRENDERED'?'surrendered-card':'fought-law-card');
+    const image=document.createElement('img');image.className='terminal-art';
+    image.src=outcome==='SURRENDERED'?'assets/vignettes/surrounded-v1-candidate.png':'assets/vignettes/fought-law-v1-candidate.png';
+    image.alt=outcome==='SURRENDERED'?'Police surround the stopped getaway car.':'Police surround the getaway car after a failed breakout.';
+    card.prepend(image);
+  }
+  function showKnownAssociateCard(title,text){
+    showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/known-associate-arrest-v1-candidate.png';image.alt='The red getaway car is boxed in by police cruisers and road barricades.';card.prepend(image);
+  }
+  function showRecognizedCard(title,text){
+    showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/recognized-arrest-v1-candidate.png';image.alt='A police officer handcuffs the getaway driver beside a police cruiser at the airport.';card.prepend(image);
+  }
+
+  function showPoliceManeuversCard(title,text){
+    showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const yellow=carSwitch.used&&!protectedDeparture;
+    const image=document.createElement('img');image.className='terminal-art';image.src=yellow?'assets/vignettes/pit-maneuver-yellow-v1-candidate.png':'assets/vignettes/pit-maneuver-red-v1-candidate.png';image.alt=yellow?'A police cruiser performs a PIT maneuver on the yellow getaway car.':'A police cruiser performs a PIT maneuver on the red getaway car.';card.prepend(image);
+  }
+
+  function showMatchingDescriptionCard(title,text){
+    showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
+    const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
+    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/matching-description-arrest-v1-candidate.png';image.alt='A police officer arrests the getaway driver beside a police cruiser at the airport.';card.prepend(image);
+  }
+  function clearTbonedCard(){const card=document.querySelector('.situation-card');card.classList.remove('tboned-card','intercepted-card','shortcut-card','road-closed-card','terminal-art-card','handoff-art-card','second-flight-card','waiting-card');card.querySelector('.tboned-scene')?.remove();card.querySelector('.intercepted-scene')?.remove();card.querySelector('.shortcut-art')?.remove();card.querySelector('.road-closed-art')?.remove();card.querySelector('.terminal-art')?.remove();card.querySelector('.card-light-flash')?.remove();}
+  function showCard(title,text,choices){
+    clearTbonedCard();
+    awaitingCard=true;document.getElementById('card-title').textContent=title;document.getElementById('card-text').textContent=text;
+    const holder=document.getElementById('card-choices');holder.replaceChildren();
+    choices.forEach(choice=>{const button=document.createElement('button');button.textContent=choice.label;button.onclick=()=>{if(!animating)choice.action();};holder.append(button);});
+    document.getElementById('card-backdrop').hidden=false;draw();
+  }
+  function hideCard(){document.getElementById('card-backdrop').hidden=true;awaitingCard=false;clearTbonedCard();}
+  function demoContactVehicle(id,sprite,from,to,targetOffset={x:0,y:0},finalHeading=null){
+    const layer=document.getElementById('contact-demo'),heading=travelHeading(from,to),frame=headingFrame(finalHeading??heading??0),g=el('g',{'data-demo-vehicle':id});
+    const [fromX,fromY]=positions[from],[nodeX,nodeY]=positions[to],toX=nodeX+targetOffset.x,toY=nodeY+targetOffset.y;g.style.transform=`translate(${toX}px,${toY}px)`;g.style.transformOrigin='0 0';
+    g.append(el('image',{href:sprite,x:-24-frame*48,y:-24,width:384,height:48,'clip-path':'url(#car-frame)',class:'vehicle-sprite'}));layer.append(g);
+    return g.animate([{transform:`translate(${fromX}px,${fromY}px)`},{transform:`translate(${toX}px,${toY}px)`}],{duration:650,easing:'ease-in',fill:'forwards'});
+  }
+  async function demoContact(direction){
+    if(!debugMode||awaitingCard||animating||!CONTACT_CARDS[direction])return;
+    const setups={INTERCEPTED:{player:'n11',police:'n13',impact:'n12'},T_BONED:{player:'n11',police:'n02',impact:'n12'},POLICE_MANEUVERS:{player:'n11',police:'n10',impact:'n12'}},setup=setups[direction],priorPreview=previewPhase;
+    previewPhase='GETAWAY';draw();const layer=document.getElementById('contact-demo');layer.replaceChildren();
+    const playerTravel=travelHeading(setup.player,setup.impact),policeTravel=travelHeading(setup.police,setup.impact),demoOffsets=contactOffsets(direction,playerTravel,policeTravel,'DEMO_POLICE'),playerFinal=direction==='INTERCEPTED'?playerTravel-45:null,policeFinal=direction==='INTERCEPTED'?policeTravel-45:null;
+    const player=demoContactVehicle('DEMO_PLAYER','assets/vehicles/minzinn/red-musclecar-8dir-v1.png',setup.player,setup.impact,demoOffsets.PLAYER,playerFinal),police=demoContactVehicle('DEMO_POLICE','assets/vehicles/minzinn/police-car-8dir-v1.png',setup.police,setup.impact,demoOffsets.DEMO_POLICE,policeFinal);
+    animating=true;await Promise.allSettled([player.finished,police.finished]);
+    const impact=[...layer.children].map(vehicle=>vehicle.animate([{transform:`${vehicle.style.transform} translate(0,0)`},{transform:`${vehicle.style.transform} translate(3px,-2px)`},{transform:`${vehicle.style.transform} translate(-2px,2px)`},{transform:`${vehicle.style.transform} translate(0,0)`}],{duration:180}));
+    await Promise.allSettled(impact.map(animation=>animation.finished));animating=false;
+    if(direction==='T_BONED'){showTbonedCard();return;}
+    if(direction==='INTERCEPTED'){showInterceptedCard();return;}
+    const card=CONTACT_CARDS[direction];if(direction==='POLICE_MANEUVERS'){showPoliceManeuversCard(card.title,card.text);}else showCard(card.title,card.text,[{label:'Close demonstration',action:()=>{hideCard();layer.replaceChildren();previewPhase=priorPreview;draw();}}]);
+  }
+  function beginRoamingPursuer(){
+    if(!pursuer)return;
+    const waypoints=ROAMING_PURSUER_CONFIG.patterns[0].waypoints;
+    roamingPursuer={patternId:'FORMER-PURSUER-CITY',current:pursuer,waypointIndex:Math.floor(Math.random()*waypoints.length),previousWaypoint:pursuer,lastDestinationChoice:null};
+  }
+  function freshPatrolAwayFrom(config,excluded){
+    const blocked=new Set(excluded),patrol=GETAWAY_RULES.newPatrol(config);
+    if(!blocked.has(patrol.current))return patrol;
+    const pattern=config.patterns.find(candidate=>candidate.id===patrol.patternId);
+    const starts=pattern.waypoints.filter(node=>!blocked.has(node));
+    const current=starts[Math.floor(Math.random()*starts.length)];
+    const targets=pattern.waypoints.filter(node=>node!==current);
+    return {patternId:pattern.id,current,waypointIndex:pattern.waypoints.indexOf(targets[Math.floor(Math.random()*targets.length)]),previousWaypoint:current,lastDestinationChoice:null};
+  }
+  function newBus(excluded){
+    const occupied=new Set(excluded),starts=BUS_ROUTE.map((node,routeIndex)=>({node,routeIndex})).filter(start=>!occupied.has(start.node));
+    const start=starts[Math.floor(Math.random()*starts.length)];return {node:start.node,routeIndex:start.routeIndex,tick:0};
+  }
+  function advanceBus(roads){
+    if(phase!=='CLEANUP'||!bus)return;bus.tick+=1;if(bus.tick%2!==0)return;
+    const nextIndex=(bus.routeIndex+1)%BUS_ROUTE.length,target=BUS_ROUTE[nextIndex],planned=GETAWAY_RULES.shortestStep(roads,bus.node,target);
+    const occupied=new Set([pos,pursuer,...patrols.map(patrol=>patrol.current),...objectives.filter(task=>!task.complete).map(task=>task.node)]);
+    const open=(roads.get(bus.node)||[]).filter(node=>!occupied.has(node));
+    if(!open.length){recordEvent(pos,'BUS_HELD',null,{node:bus.node,target,reason:'NO_OPEN_NEIGHBOUR'});return;}
+    const next=planned!==bus.node&&!occupied.has(planned)?planned:open[Math.floor(Math.random()*open.length)],from=bus.node;
+    bus.node=next;if(next===target)bus.routeIndex=nextIndex;recordEvent(pos,'BUS_MOVED',null,{from,to:next,target,mode:next===planned?'ROUTE':'OPEN_NODE'});
+  }
+  function maybeSwitchCar(){
+    if(carSwitch.used||pos!==carSwitch.node)return;
+    carSwitch.used=true;switchPending=true;
+    recordEvent(pos,'CAR_SWITCH_ENTERED',null,{node:pos,formerPursuer:pursuer});
+  }
+  function policeTurn(){
+    const roads=network(),pursuerFrom=pursuer;
+    if(turns===1){
+      pursuer='bank';
+      if(pursuitState==='TRAIL_BROKEN'){
+        beginRoamingPursuer();roamingPursuer=GETAWAY_RULES.patrolStep(ROAMING_PURSUER_CONFIG,roads,roamingPursuer);pursuer=roamingPursuer.current;
+        recordEvent(pos,'PURSUER_ENTERED_SEARCH',null,{from:'bank',to:pursuer});
+      }
+    }
+    else if(pursuitState==='IDENTIFIED'||pursuitState==='REACQUIRED'){
+      const pursuit=GETAWAY_RULES.trailAwareDecision(roads,pursuer,pos,previousPos);
+      pursuer=pursuit.next;
+      if(pursuit.roll!==null)recordEvent(pos,'PURSUER_TIE_BREAK',null,{roll:pursuit.roll,mode:pursuit.mode,trail:previousPos,shortestOptions:pursuit.shortestOptions,selected:pursuit.next});
+    } else {
+      if(!roamingPursuer)beginRoamingPursuer();
+      roamingPursuer=GETAWAY_RULES.patrolStep(ROAMING_PURSUER_CONFIG,roads,roamingPursuer);
+      pursuer=roamingPursuer.current;
+      if(roamingPursuer.lastDestinationChoice)recordEvent(pos,'FORMER_PURSUER_DESTINATION_SELECTED',null,roamingPursuer.lastDestinationChoice);
+    }
+    if(pursuer===pos){const source=pursuitState==='CAR_SWITCHED'?'P3':'PURSUER';concludePoliceContact(pursuitState==='CAR_SWITCHED'?'PATROL_CAPTURE':'PURSUER_CAPTURE',source,pursuitState==='CAR_SWITCHED'?'FORMER_PURSUER_INTERCEPTED':'PURSUER_MOVED',pursuerFrom);draw();return;}
+    if(switchPending){
+      const conversionNode=pursuer;
+      switchPending=false;pursuitState='CAR_SWITCHED';phase='CLEANUP';flightTurnsRemaining=FLIGHT_WINDOW;protectedDeparture=true;
+      patrols=MAP_DATA.levelOnePatrols.map(config=>freshPatrolAwayFrom(config,['n44']));
+      roamingPursuer=freshPatrolAwayFrom(ROAMING_PURSUER_CONFIG,['n44']);pursuer=roamingPursuer.current;
+      bus=newBus([pos,pursuer,...patrols.map(patrol=>patrol.current),...objectives.map(task=>task.node)]);
+      recordEvent(pos,'CAR_SWITCHED',null,{node:carSwitch.node,conversionNode,flightTurnsRemaining,resetPatrols:{P1:patrols[0].current,P2:patrols[1].current,P3:pursuer}});
+      recordEvent(pos,'PHASE_TRANSITION_RESOLVED');draw();
+      const runId=currentRun?.id,entryMotion=movementFinished;
+      entryMotion.then(()=>{if(currentRun?.id!==runId||!protectedDeparture||pos!=='hideout')return;
+        showMapTwoBriefingCard(()=>{previousPos='hideout';pos='n44';turns+=1;protectedDeparture=false;hideoutForegroundActive=true;
+        recordEvent(pos,'FLIGHT_CLOCK_ADVANCED',null,{flightTurnsRemaining,automaticDeparture:true});
+        recordEvent(pos,'PROTECTED_DEPARTURE',null,{from:'hideout',to:'n44',automatic:true,vehiclesAdvanced:false});draw();
+        const departureMotion=movementFinished;departureMotion.then(()=>{if(currentRun?.id!==runId)return;hideoutForegroundActive=false;draw();});});
+      });return;
+    }
+    if(pursuitState==='TRAIL_BROKEN'&&neighbours(pos).includes(pursuer)){
+      pursuitState='REACQUIRED';roamingPursuer=null;recordEvent(pos,'TRAIL_REACQUIRED',null,{pursuer});
+    }
+    const patrolFroms=patrols.map(patrol=>patrol.current);
+    patrols=patrols.map((patrol,index)=>GETAWAY_RULES.patrolStep(MAP_DATA.levelOnePatrols[index],roads,patrol));
+    patrols.forEach((patrol,index)=>{if(patrol.lastDestinationChoice)recordEvent(pos,'PATROL_DESTINATION_SELECTED',null,{patrolId:`P${index+1}`,patternId:patrol.patternId,...patrol.lastDestinationChoice});});
+    const interceptor=patrols.findIndex(patrol=>patrol.current===pos);
+    if(interceptor>=0)concludePoliceContact('PATROL_CAPTURE',`P${interceptor+1}`,'PATROL_INTERCEPTED',patrolFroms[interceptor]);
+    else {
+      advanceCrewObjectives(roads);
+      advanceBus(roadNetwork());
+      const handoff=collectObjective();
+      recordEvent(pos,'TURN_RESOLVED');
+      if(handoff){showCrewHandoff(handoff,draw);return;}
+      if(maybeTriggerImpasse())return;
+    }
+    draw();
+  }
+  function safeClosure(){
+    const destination=phase==='GETAWAY'?'hideout':'bank';
+    const choices=neighbours(pos).filter(next=>next!==previousPos&&next!==destination).map(next=>[pos,next]);
+    for(let i=choices.length-1;i>0;i-=1){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
+    return choices.find(edge=>{
+      const trial={blocked:[...activeLayout().blocked,edge]},g=GETAWAY_RULES.graph(activeMap(),trial);
+      return GETAWAY_RULES.reachable(g,pos,destination)&&(!pursuer||GETAWAY_RULES.reachable(g,pursuer,pos));
+    })||null;
+  }
+  function resolveRoadCard(){
+    const edge=safeClosure();
+    if(edge)dynamicBlocked.push(edge);
+    cardState.resolved=true;
+    const detail=edge?(()=>{const [from,to]=edge.map(nodeNumber).map(Number).sort((a,b)=>a-b);return `${ordinal(from)} to ${ordinal(to)} Avenue is closed. Everyone must route around.`;})():'The closure is behind you; no remaining route changes.';
+    recordEvent(pos,'CARD_RESOLVED',{id:cardState.card.id,closedEdge:edge});
+    showRoadClosedCard(detail);
+  }
+  const nodeNumber=id=>id.startsWith('n')?String(Number(id[1])*5+Number(id[2])+1):id.toUpperCase();
+  const ordinal=n=>{const mod100=n%100;return `${n}${mod100>=11&&mod100<=13?'th':n%10===1?'st':n%10===2?'nd':n%10===3?'rd':'th'}`;};
+  function resolveShortcut(){
+    showShortcutCard();
+  }
+  function takeShortcut(next){
+    const choices=neighbours(pos);
+    if(!shortcutSelecting||!choices.includes(next))return;
+    const from=pos;previousPos=from;pos=next;shortcutSelecting=false;cardState.resolved=true;recordEvent(next,'CARD_RESOLVED',{id:cardState.card.id,from,to:next});
+    const occupied=patrols.findIndex(patrol=>pos===patrol.current);
+    if(occupied>=0){conclude('PATROL_CAPTURE',`P${occupied+1}`,'SHORTCUT_ENTERED_PATROL');draw();return;}
+    maybeSwitchCar();
+    if(!carSwitch.used&&pursuitState!=='TRAIL_BROKEN'){
+      pursuitState='TRAIL_BROKEN';beginRoamingPursuer();recordEvent(pos,'TRAIL_BROKEN',{id:cardState.card.id},{pursuer});
+    }
+    const handoff=collectObjective();
+    if(handoff){showCrewHandoff(handoff,policeTurn);return;}
+    if(phase==='CLEANUP'&&pos==='bank'&&allObjectivesComplete()){resolveAirportArrival();return;}
+    policeTurn();
+  }
+  function maybeTriggerCard(){
+    if(cardState.resolved||cardState.card||pos==='hideout'||pos==='bank'||cardCheckedNodes.has(pos))return false;
+    cardCheckedNodes.add(pos);
+    if(CARD_CHECK_DISABLED[phase]?.has(pos)){recordEvent(pos,'CARD_CHECK_SKIPPED',null,{reason:'NODE_DISABLED',phase});return false;}
+    const eligibleCards=CARDS.filter(card=>!card.excludedNodes.includes(pos));
+    if(!eligibleCards.length){recordEvent(pos,'CARD_CHECK_SKIPPED',null,{reason:'NO_ELIGIBLE_CARD'});return false;}
+    const roll=Math.floor(Math.random()*20)+1;
+    recordEvent(pos,'CARD_CHECK',{roll,triggered:roll<=2,eligibleCards:eligibleCards.map(card=>card.id)});
+    if(roll<=2){
+      cardState.card=eligibleCards[Math.floor(Math.random()*eligibleCards.length)];cardState.triggerNode=pos;
+      currentRun.assignedCard=cardState.card.id;currentRun.cardTriggerNode=pos;
+      recordEvent(pos,'CARD_TRIGGERED',{id:cardState.card.id,roll});
+      if(cardState.card.id==='ROAD_CLOSED_AHEAD')resolveRoadCard();else resolveShortcut();
+      return true;
+    }
+    return false;
+  }
+  const allObjectivesComplete=()=>objectives.every(task=>task.complete);
+  function collectObjective(){
+    if(phase!=='CLEANUP')return;
+    const task=objectives.find(candidate=>!candidate.complete&&!candidate.pending&&candidate.node===pos);
+    if(task){pos=task.node;task.pending=true;recordEvent(pos,'CREW_INTERSECTED',null,{taskId:task.id,node:task.node,routeId:task.routeId,playerOccupies:pos});return task;}
+  }
+  function advanceCrewObjectives(roads){
+    if(phase!=='CLEANUP')return;
+    const occupied=new Set(objectives.filter(task=>!task.complete).map(task=>task.node));
+    objectives.filter(task=>!task.complete).forEach(task=>{
+      const nextIndex=(task.routeIndex+task.direction+task.route.length)%task.route.length,target=task.route[nextIndex],from=task.node;
+      occupied.delete(from);
+      let next=GETAWAY_RULES.shortestStep(roads,from,target);
+      const otherObjectives=objectives.filter(candidate=>candidate!==task&&!candidate.complete).map(candidate=>candidate.node);
+      const tooClose=node=>otherObjectives.some(other=>GETAWAY_RULES.shortestDistance(roads,node,other)<3);
+      if(occupied.has(next)||tooClose(next)){
+        const open=(roads.get(from)||[]).filter(node=>!occupied.has(node)&&node!==pos&&node!==pursuer&&!tooClose(node));
+        if(open.length){
+          open.sort((a,b)=>GETAWAY_RULES.shortestDistance(roads,a,target)-GETAWAY_RULES.shortestDistance(roads,b,target));
+          next=open[0];
+        }else if(occupied.has(next)){ next=from; }
+      }
+      task.node=next;occupied.add(next);vehicleHeadings[task.id]=travelHeading(from,task.node)??vehicleHeadings[task.id];
+      if(task.node===target)task.routeIndex=nextIndex;
+      recordEvent(pos,'CREW_MOVED',null,{taskId:task.id,routeId:task.routeId,from,to:task.node,target});
+    });
+  }
+  function showCrewHandoff(task,continueTurn){
+    const person=task.id==='PAY_DRIVER'?'driver':'inside contact';
+    const heading=travelHeading(previousPos,pos)??vehicleHeadings[task.id]??vehicleHeadings.PLAYER??0,side=directionUnit(heading+90),runId=currentRun?.id;
+    vehicleHeadings.PLAYER=heading;rendezvousVisualOffsets={PLAYER:{x:-side.x*24,y:-side.y*24},[task.id]:{x:side.x*24,y:side.y*24}};animating=true;visualPositions=vehicleState();draw();
+    setTimeout(()=>{if(currentRun?.id!==runId||!task.pending)return;animating=false;showCard('Cut Delivered',`You hand over the cut. One less loose end.`,[{label:'Keep moving',action:()=>{const firstPayment=!objectives.some(candidate=>candidate.complete);task.pending=false;task.complete=true;if(firstPayment){knownAssociateAfterTurn=turns+1;recordEvent(pos,'KNOWN_ASSOCIATE_STATE_ARMED',null,{activeAfterTurn:knownAssociateAfterTurn,taskId:task.id});}recordEvent(pos,'CREW_PAID',null,{taskId:task.id,node:task.node,routeId:task.routeId});rendezvousVisualOffsets={};hideCard();if(!maybeTriggerImpasse())continueTurn();}}]);if(task.id==='PAY_DRIVER'||task.id==='PAY_CONTACT'){const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','handoff-art-card');const image=document.createElement('img');image.className='terminal-art';image.src=task.id==='PAY_DRIVER'?'assets/vignettes/crew-handoff-curbside-v1-candidate.png':'assets/vignettes/crew-handoff-service-lot-v1-candidate.png';image.alt=task.id==='PAY_DRIVER'?'A curbside cash handoff between the yellow sports car and a cutman car.':'A service-lot cash handoff between the yellow sports car and a cutman car.';card.prepend(image);}},320);
+  }
+  function move(to){
+    if(ended||awaitingCard||shortcutSelecting||animating||flightTransitioning||!neighbours(pos).includes(to))return;
+    previousPos=pos;pos=to;turns+=1;
+    if(phase==='CLEANUP'){
+      flightTurnsRemaining=Math.max(0,flightTurnsRemaining-1);recordEvent(pos,'FLIGHT_CLOCK_ADVANCED',null,{flightTurnsRemaining});
+      if(!flightTurnsRemaining&&!(pos==='bank'&&allObjectivesComplete())){missFlight('ROAD_TURN');draw();return;}
+    }
+    if(protectedDeparture){
+      if(previousPos!=='hideout'||pos!=='n44')return;
+      protectedDeparture=false;recordEvent(pos,'PROTECTED_DEPARTURE');draw();return;
+    }
+    const occupied=patrols.findIndex(patrol=>pos===patrol.current);
+    if(occupied>=0){
+      const patrol=patrols[occupied],config=MAP_DATA.levelOnePatrols[occupied],pattern=config.patterns.find(candidate=>candidate.id===patrol.patternId),target=pattern?.waypoints[patrol.waypointIndex],facing=vehicleHeadings[`P${occupied+1}`]??travelHeading(patrol.current,target);
+      concludePoliceContact('PATROL_CAPTURE',`P${occupied+1}`,'PLAYER_ENTERED_PATROL',patrol.current,facing,'PLAYER');draw();return;
+    }
+    maybeSwitchCar();
+    if(pos==='hideout'&&phase==='GETAWAY'){policeTurn();return;}
+    const handoff=collectObjective();
+    if(handoff){showCrewHandoff(handoff,policeTurn);return;}
+    if(phase==='CLEANUP'&&pos==='bank'&&allObjectivesComplete()){resolveAirportArrival();return;}
+    if(maybeTriggerCard())return;
+    policeTurn();
+  }
+  document.getElementById('reset').onclick=()=>reset('MANUAL_RESET');
+  document.getElementById('view-toggle').onclick=()=>{debugMode=!debugMode;renderViewMode();draw();};
+  document.getElementById('map-preview').onclick=()=>{previewPhase=previewPhase?null:(phase==='GETAWAY'?'CLEANUP':'GETAWAY');draw();};
+  document.getElementById('layout').onclick=()=>{if(currentRun&&!currentRun.outcome&&turns>0){recordEvent(null,'LAYOUT_CHANGED');finishRun('ABANDONED','LAYOUT_CHANGED');}const current=PLAYABLE_LAYOUT_INDICES.indexOf(layoutIndex),next=PLAYABLE_LAYOUT_INDICES[(current+1)%PLAYABLE_LAYOUT_INDICES.length];layoutIndex=next;currentRun=null;reset();};
+  document.querySelectorAll('[data-contact-demo]').forEach(button=>button.onclick=()=>demoContact(button.dataset.contactDemo));
+  document.getElementById('history-button').onclick=()=>{const panel=document.getElementById('history');panel.hidden=!panel.hidden;updateHistory();};
+  document.getElementById('download-json').onclick=downloadJSON;
+  document.getElementById('download-csv').onclick=downloadCSV;
+  document.getElementById('clear-history').onclick=async()=>{if(confirm('Delete all saved Getaway Grid run history from this browser?')){localStorage.removeItem(LOG_KEY);runArchive=[];if(!runDatabase)runDatabase=await openRunDatabase();await databaseRequest('readwrite',store=>store.clear());updateHistory();}};
+  document.getElementById('start-getaway').onclick=()=>{const intro=document.getElementById('intro-backdrop');intro.hidden=true;intro.classList.remove('staging');const splash=document.getElementById('level-splash');splash.textContent='LEVEL 1';splash.classList.remove('instruction','active');void splash.offsetWidth;splash.classList.add('active');window.setTimeout(()=>{splash.textContent='GET TO THE HIDEOUT';splash.classList.remove('active');void splash.offsetWidth;splash.classList.add('instruction','active');},1450);window.setTimeout(()=>splash.classList.remove('active'),2850);recordEvent(pos,'INTRO_COMPLETED');draw();};
+  reset();initializeRunStorage();
+})();
+</script>
+</body>
+</html>
