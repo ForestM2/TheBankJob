@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Getaway Grid — Airport Run v0.11</title>
 <style>
-  @font-face { font-family:"VCR OSD Mono"; src:url("assets/fonts/VCR_OSD_MONO_1.001.ttf") format("truetype"); font-display:swap; }
+  @font-face { font-family:"VCR OSD Mono"; src:url("fonts/VCR_OSD_MONO_1.001.ttf") format("truetype"); font-display:swap; }
   :root { --night:#101822; --panel:#182431; --street:#8498a9; --open:#dce7ef;
     --ink:#f5f1e8; --muted:#aebbc5; --bank:#d4a33b; --hideout:#4eaa79;
     --car:#e64f3f; --legal:#f5c84b; --blocked:#e5574f; }
@@ -280,12 +280,12 @@
 <div class="intro-backdrop staging" id="intro-backdrop">
   <section class="intro-card" role="dialog" aria-modal="true" aria-labelledby="intro-title">
     <div class="intro-scene">
-      <img class="intro-background" src="assets/vignettes/opening-bank-background-v2.png" alt="An empty downtown street outside a bank.">
+      <img class="intro-background" src="vignettes/opening-bank-background-v2.png" alt="An empty downtown street outside a bank.">
       <div class="intro-skids" aria-hidden="true"></div>
-      <img class="intro-car" src="assets/vignettes/opening-muscle-car-v1.png" alt="A red muscle car pulls up to the curb.">
-      <img class="intro-robber" src="assets/vignettes/opening-robber-foreground-v4.png" alt="A robber carrying two bags waits on the sidewalk with his back to the bank.">
+      <img class="intro-car" src="vignettes/opening-muscle-car-v1.png" alt="A red muscle car pulls up to the curb.">
+      <img class="intro-robber" src="vignettes/opening-robber-foreground-v4.png" alt="A robber carrying two bags waits on the sidewalk with his back to the bank.">
     </div>
-    <div class="intro-copy"><h2 id="intro-title" class="sr-only">The Bank Job</h2><button id="start-getaway" aria-label="Start getaway"><img class="intro-title-art" src="assets/vignettes/the-bank-job-title.png" alt="The Bank Job. Click to start."></button></div>
+    <div class="intro-copy"><h2 id="intro-title" class="sr-only">The Bank Job</h2><button id="start-getaway" aria-label="Start getaway"><img class="intro-title-art" src="vignettes/the-bank-job-title.png" alt="The Bank Job. Click to start."></button></div>
   </section>
 </div>
 <div class="card-backdrop" id="card-backdrop" hidden>
@@ -316,8 +316,8 @@
   const PHASE_TWO_ADDED=[['n03','n04'],['n04','n14'],['n11','n22'],['n13','n22'],['n31','n22'],['n33','n22']];
   const ROAMING_PURSUER_CONFIG={territory:['bank','hideout',...MAP_DATA.nodes.filter(node=>!node.outside).map(node=>node.id)],patterns:[{id:'FORMER-PURSUER-CITY',waypoints:['n00','n03','n14','n34','n44','n40','n30','n10']} ]};
   const CREW_ROUTES=[
-    {id:'DRIVER_OUTER_LOOP',waypoints:['n00','n01','n02','n03','n04','n14','n24','n34','n44','n43','n42','n41','n40','n30','n20','n10'],style:'crew-green',sprite:'assets/vehicles/green-luxury-8dir.png'},
-    {id:'CONTACT_CENTER_LOOP',waypoints:['n11','n22','n33','n34','n24','n23','n13','n22'],style:'crew-magenta',sprite:'assets/vehicles/magenta-luxury-8dir.png'}
+    {id:'DRIVER_OUTER_LOOP',waypoints:['n00','n01','n02','n03','n04','n14','n24','n34','n44','n43','n42','n41','n40','n30','n20','n10'],style:'crew-green',sprite:'vehicles/green-luxury-8dir.png'},
+    {id:'CONTACT_CENTER_LOOP',waypoints:['n11','n22','n33','n34','n24','n23','n13','n22'],style:'crew-magenta',sprite:'vehicles/magenta-luxury-8dir.png'}
   ];
   const CREW_START_EXCLUDED=new Set(['n23','n24','n32','n33','n34','n42','n43','n44']);
   const BUS_ROUTE=['n10','n11','n22','n33','n34','n24','n14','n13','n22','n31','n30','n20'];
@@ -357,40 +357,40 @@
   // The base overlaps the dark curb by one pixel on each side, while the
   // asphalt itself remains above it. This is deliberately a small 69px frame,
   // not a road-to-road expansion.
-  const calibrationLot=(col,row)=>({src:'assets/city/generated-building-specimens/fixed-lot-base-v1-51x66.png',x:88+col*85,y:114+row*100,width:69,height:82,stretch:true,completeLot:true,raisedClip:[0,0,0,0]});
-  const greenApartmentCandidate={src:'assets/city/generated-building-specimens/green-apartment-candidate-v1-transparent-51w.png',x:173,y:91,width:69,height:105,stretch:true,completeLot:true,raisedClip:[0,0,1,.23]};
-  const churchCandidate={src:'assets/city/generated-building-specimens/city-church-complete-lot-69x82-v1.png',x:173,y:290,width:69,height:106,completeLot:true,raisedClip:[0,0,1,.23]};
-  const brickApartmentCandidate={src:'assets/city/generated-building-specimens/brick-apartment-row-1-col-3-v3-transparent-69x96.png',x:258,y:100,width:69,height:96,completeLot:true,raisedClip:[0,0,1,.15]};
-  const blueMidriseCandidate={src:'assets/city/generated-building-specimens/blue-midrise-candidate-v1-transparent-69w.png',x:258,y:198,width:69,height:98,completeLot:true,raisedClip:[0,0,1,.17]};
-  const greenAwningStoreCandidate={src:'assets/city/generated-building-specimens/green-awning-market-square-roof-v2-transparent-69x82.png',x:343,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0],storefrontSign:{text:'MARKET',x:17,y:48,width:35,height:8},roofSign:{src:'assets/city/generated-building-specimens/new-coffee-rooftop-sign-v1-14x24.png',x:43,y:12,width:14,height:24}};
-  const twoRowhousesCandidate={src:'assets/city/generated-building-specimens/two-rowhouses-complete-lot-v1-transparent-69x89.png',x:343,y:407,width:69,height:89,completeLot:true,raisedClip:[0,0,1,.08]};
-  const twinTownhousesCandidate={src:'assets/city/generated-building-specimens/ornate-twin-townhouses-complete-lot-v1-transparent-69x97.png',x:258,y:399,width:69,height:97,completeLot:true,raisedClip:[0,0,1,.15]};
-  const redBlueRowhousesCandidate={src:'assets/city/generated-building-specimens/red-blue-rowhouses-complete-lot-v1-transparent-69x96.png',x:173,y:400,width:69,height:96,completeLot:true,raisedClip:[0,0,1,.15]};
-  const georgianTownhousesCandidate={src:'assets/city/generated-building-specimens/two-georgian-townhouses-complete-lot-v1-transparent-69w.png',x:88,y:311,width:69,height:85,completeLot:true,raisedClip:[0,0,1,.04]};
-  const cornerGroceryCandidate={src:'assets/city/generated-building-specimens/corner-grocery-complete-lot-v1-transparent-69w.png',x:258,y:314,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0],roofSign:{src:'assets/city/generated-building-specimens/drink-pizza-bottle-rooftop-sign-v1-26x22.png',x:22,y:29,width:26,height:22}};
-  const blueUrbanMidriseCandidate={src:'assets/city/generated-building-specimens/blue-urban-midrise-complete-lot-v1-transparent-69w.png',x:173,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]};
-  const centerParkLotCandidate=(x,y)=>({src:'assets/city/generated-building-specimens/center-park-landscaped-lot-v1-transparent-69x82.png',x,y,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]});
+  const calibrationLot=(col,row)=>({src:'city/generated-building-specimens/fixed-lot-base-v1-51x66.png',x:88+col*85,y:114+row*100,width:69,height:82,stretch:true,completeLot:true,raisedClip:[0,0,0,0]});
+  const greenApartmentCandidate={src:'city/generated-building-specimens/green-apartment-candidate-v1-transparent-51w.png',x:173,y:91,width:69,height:105,stretch:true,completeLot:true,raisedClip:[0,0,1,.23]};
+  const churchCandidate={src:'city/generated-building-specimens/city-church-complete-lot-69x82-v1.png',x:173,y:290,width:69,height:106,completeLot:true,raisedClip:[0,0,1,.23]};
+  const brickApartmentCandidate={src:'city/generated-building-specimens/brick-apartment-row-1-col-3-v3-transparent-69x96.png',x:258,y:100,width:69,height:96,completeLot:true,raisedClip:[0,0,1,.15]};
+  const blueMidriseCandidate={src:'city/generated-building-specimens/blue-midrise-candidate-v1-transparent-69w.png',x:258,y:198,width:69,height:98,completeLot:true,raisedClip:[0,0,1,.17]};
+  const greenAwningStoreCandidate={src:'city/generated-building-specimens/green-awning-market-square-roof-v2-transparent-69x82.png',x:343,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0],storefrontSign:{text:'MARKET',x:17,y:48,width:35,height:8},roofSign:{src:'city/generated-building-specimens/new-coffee-rooftop-sign-v1-14x24.png',x:43,y:12,width:14,height:24}};
+  const twoRowhousesCandidate={src:'city/generated-building-specimens/two-rowhouses-complete-lot-v1-transparent-69x89.png',x:343,y:407,width:69,height:89,completeLot:true,raisedClip:[0,0,1,.08]};
+  const twinTownhousesCandidate={src:'city/generated-building-specimens/ornate-twin-townhouses-complete-lot-v1-transparent-69x97.png',x:258,y:399,width:69,height:97,completeLot:true,raisedClip:[0,0,1,.15]};
+  const redBlueRowhousesCandidate={src:'city/generated-building-specimens/red-blue-rowhouses-complete-lot-v1-transparent-69x96.png',x:173,y:400,width:69,height:96,completeLot:true,raisedClip:[0,0,1,.15]};
+  const georgianTownhousesCandidate={src:'city/generated-building-specimens/two-georgian-townhouses-complete-lot-v1-transparent-69w.png',x:88,y:311,width:69,height:85,completeLot:true,raisedClip:[0,0,1,.04]};
+  const cornerGroceryCandidate={src:'city/generated-building-specimens/corner-grocery-complete-lot-v1-transparent-69w.png',x:258,y:314,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0],roofSign:{src:'city/generated-building-specimens/drink-pizza-bottle-rooftop-sign-v1-26x22.png',x:22,y:29,width:26,height:22}};
+  const blueUrbanMidriseCandidate={src:'city/generated-building-specimens/blue-urban-midrise-complete-lot-v1-transparent-69w.png',x:173,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]};
+  const centerParkLotCandidate=(x,y)=>({src:'city/generated-building-specimens/center-park-landscaped-lot-v1-transparent-69x82.png',x,y,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]});
   // Coordinates mirror the user-adjusted Tiled object; Tiled uses a bottom-edge y,
   // while SVG images use their top edge.
-  const trianglePocketParkCandidate={src:'assets/city/generated-building-specimens/triangle-pocket-park-v1-51x66.png',x:343.005501286423,y:128.4844060493238,width:58.9486267701383,height:67.0458719434392,stretch:true};
+  const trianglePocketParkCandidate={src:'city/generated-building-specimens/triangle-pocket-park-v1-51x66.png',x:343.005501286423,y:128.4844060493238,width:58.9486267701383,height:67.0458719434392,stretch:true};
   const CITY_PACK_TEST=[
-    {src:'assets/city/generated-building-specimens/tall-apartment-complete-lot-v1-keyed-51w.png',x:89,y:74,width:67,height:122,completeLot:true,raisedClip:[.16,0,.84,.78]},greenApartmentCandidate,brickApartmentCandidate,
+    {src:'city/generated-building-specimens/tall-apartment-complete-lot-v1-keyed-51w.png',x:89,y:74,width:67,height:122,completeLot:true,raisedClip:[.16,0,.84,.78]},greenApartmentCandidate,brickApartmentCandidate,
     trianglePocketParkCandidate,
-    {src:'assets/city/generated-building-specimens/five-story-terracotta-apartment-complete-lot-v1-keyed-51w.png',x:89,y:182,width:67,height:114,completeLot:true,raisedClip:[.17,0,.83,.8]},blueUrbanMidriseCandidate,
+    {src:'city/generated-building-specimens/five-story-terracotta-apartment-complete-lot-v1-keyed-51w.png',x:89,y:182,width:67,height:114,completeLot:true,raisedClip:[.17,0,.83,.8]},blueUrbanMidriseCandidate,
     blueMidriseCandidate,
     greenAwningStoreCandidate,georgianTownhousesCandidate,
     churchCandidate,
     cornerGroceryCandidate,
-    {src:'assets/city/urban-exteriors/open-asphalt.png',x:343.005501286422,y:314.2605476185496,width:68.5706486497793,height:82.1064279289644,stretch:true},
-    {src:'assets/city/generated-building-specimens/map1-pocket-park-row-4-col-1-v1-transparent-69x82.png',x:88,y:414,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]},
+    {src:'city/urban-exteriors/open-asphalt.png',x:343.005501286422,y:314.2605476185496,width:68.5706486497793,height:82.1064279289644,stretch:true},
+    {src:'city/generated-building-specimens/map1-pocket-park-row-4-col-1-v1-transparent-69x82.png',x:88,y:414,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]},
     redBlueRowhousesCandidate,twinTownhousesCandidate,twoRowhousesCandidate
   ];
   const AIRPORT_CITY_PACK=[
     // Map 2 is stored by block row, four lots per row.
-    {src:'assets/city/generated-building-specimens/tower-mall-row-1-col-1-v1-transparent-69x92.png',x:88,y:104,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/museum-row-1-col-2-v1-transparent-69x80.png',x:173,y:116,width:69,height:80,completeLot:true,raisedClip:[0,0,0,0]},{src:'assets/city/generated-building-specimens/hotel-row-1-col-3-v2-transparent-69x92.png',x:258,y:104,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/city-arena-row-1-col-4-v1-transparent-69x95.png',x:343,y:101,width:69,height:95,completeLot:true,raisedClip:[0,0,1,13/95]},
-    {src:'assets/city/generated-building-specimens/construction-site-row-2-col-1-v2-transparent-69x120.png',x:88,y:176,width:69,height:120,completeLot:true,raisedClip:[0,0,1,38/120],stretch:true},centerParkLotCandidate(173,214),centerParkLotCandidate(258,214),{src:'assets/city/generated-building-specimens/parking-garage-row-1-col-2-v1-transparent-69x82.png',x:343,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]},
-    {src:'assets/city/generated-building-specimens/building-row-3-col-1-v1-transparent-69x92.png',x:88,y:304,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},centerParkLotCandidate(173,314),centerParkLotCandidate(258,314),{src:'assets/city/generated-building-specimens/building-row-4-col-3-v1-transparent-69x92.png',x:343,y:304,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},
-    {src:'assets/city/generated-building-specimens/blue-apartment-row-4-col-1-v3-transparent-69x92.png',x:88,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,.15]},{src:'assets/city/generated-building-specimens/school-row-4-col-2-v1-transparent-69x92.png',x:173,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/ps-athletics-row-4-col-3-v1-transparent-69x92.png',x:258,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'assets/city/generated-building-specimens/garage-row-4-col-4-v2-transparent-69x92.png',x:343,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,.15]}
+    {src:'city/generated-building-specimens/tower-mall-row-1-col-1-v1-transparent-69x92.png',x:88,y:104,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'city/generated-building-specimens/museum-row-1-col-2-v1-transparent-69x80.png',x:173,y:116,width:69,height:80,completeLot:true,raisedClip:[0,0,0,0]},{src:'city/generated-building-specimens/hotel-row-1-col-3-v2-transparent-69x92.png',x:258,y:104,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'city/generated-building-specimens/city-arena-row-1-col-4-v1-transparent-69x95.png',x:343,y:101,width:69,height:95,completeLot:true,raisedClip:[0,0,1,13/95]},
+    {src:'city/generated-building-specimens/construction-site-row-2-col-1-v2-transparent-69x120.png',x:88,y:176,width:69,height:120,completeLot:true,raisedClip:[0,0,1,38/120],stretch:true},centerParkLotCandidate(173,214),centerParkLotCandidate(258,214),{src:'city/generated-building-specimens/parking-garage-row-1-col-2-v1-transparent-69x82.png',x:343,y:214,width:69,height:82,completeLot:true,raisedClip:[0,0,0,0]},
+    {src:'city/generated-building-specimens/building-row-3-col-1-v1-transparent-69x92.png',x:88,y:304,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},centerParkLotCandidate(173,314),centerParkLotCandidate(258,314),{src:'city/generated-building-specimens/building-row-4-col-3-v1-transparent-69x92.png',x:343,y:304,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},
+    {src:'city/generated-building-specimens/blue-apartment-row-4-col-1-v3-transparent-69x92.png',x:88,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,.15]},{src:'city/generated-building-specimens/school-row-4-col-2-v1-transparent-69x92.png',x:173,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'city/generated-building-specimens/ps-athletics-row-4-col-3-v1-transparent-69x92.png',x:258,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,10/92]},{src:'city/generated-building-specimens/garage-row-4-col-4-v2-transparent-69x92.png',x:343,y:404,width:69,height:92,completeLot:true,raisedClip:[0,0,1,.15]}
 ];
   let pos='bank', phase='GETAWAY', previewPhase=null, layoutIndex=MAP_DATA.roadblockLayouts.findIndex(layout=>layout.name==='Bypass test 1 — block 15–20'), turns=0, flightTurnsRemaining=null,flightAttempt=1,flightTransitioning=false,knownAssociateAfterTurn=null,pursuer=null, roamingPursuer=null, bus=null, pursuitState='IDENTIFIED', switchPending=false,protectedDeparture=false,hideoutForegroundActive=false,patrols,carSwitch,objectives,ended=false,currentRun=null,outcomeMessage='',dynamicBlocked=[],cardState=null,previousPos=null,awaitingCard=false,shortcutSelecting=false,cardCheckedNodes,animating=false,takeoffPlayed=false,airportAmbush=false,visualPositions={},vehicleHeadings={},pendingContactCard=null,collisionVisualOffsets={},collisionVisualHeadings={},rendezvousVisualOffsets={},movementFinished=Promise.resolve();
   const el=(name,attrs={})=>{const x=document.createElementNS(NS,name);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));return x};
@@ -405,12 +405,12 @@
       airportArt.append(el('rect',{x:cx+125,y:cy-9,width:219,height:38,rx:3,class:'airport-runway-bed'}));
       airportArt.append(el('rect',{x:cx+129,y:cy-5,width:211,height:30,rx:2,class:'airport-runway'}));
       airportArt.append(el('line',{x1:cx+137,y1:cy+10,x2:cx+332,y2:cy+10,class:'airport-runway-mark'}));
-      airportArt.append(el('image',{href:'assets/airport/terminal-v1.png',x:cx+10,y:cy-53,width:140,height:105,class:'airport-sprite airport-terminal'}));
-      airportArt.append(el('image',{href:'assets/airport/plane-v1.png',x:cx+125,y:cy-21,width:92,height:61,class:'airport-sprite airport-plane'}));
+      airportArt.append(el('image',{href:'airport/terminal-v1.png',x:cx+10,y:cy-53,width:140,height:105,class:'airport-sprite airport-terminal'}));
+      airportArt.append(el('image',{href:'airport/plane-v1.png',x:cx+125,y:cy-21,width:92,height:61,class:'airport-sprite airport-plane'}));
       group.append(airportArt);
     } else {
-      group.append(el('image',{href:'assets/city/generated-building-specimens/hideout-garage-candidate-v1-transparent-69x92.png',x:cx-34.5,y:cy-58,width:69,height:92,class:'landmark-pixel'}));
-      group.append(el('image',{href:'assets/city/signage/hideout-arrow-sign-v1-transparent-120x40.png',x:cx-207,y:cy-31,width:138,height:46,class:'city-pack-asset hideout-arrow-sign'}));
+      group.append(el('image',{href:'city/generated-building-specimens/hideout-garage-candidate-v1-transparent-69x92.png',x:cx-34.5,y:cy-58,width:69,height:92,class:'landmark-pixel'}));
+      group.append(el('image',{href:'city/signage/hideout-arrow-sign-v1-transparent-120x40.png',x:cx-207,y:cy-31,width:138,height:46,class:'city-pack-asset hideout-arrow-sign'}));
     }
   }
   function drawExteriorContext(renderPhase=phase){
@@ -431,11 +431,11 @@
       // gets the metropolitan lake scene north of node 5, beneath roads and game art.
       el('rect',{x:58,y:0,width:114,height:88,class:'exterior-bank-apron'}),
       el('rect',{x:18,y:0,width:40,height:88,class:'exterior-bank-green'}),
-      el('image',{href:'assets/city/metropolitan-lake-node5-scene-v1-transparent.png',x:344,y:19,width:152,height:90,class:'city-pack-asset metropolitan-lake-node5-scene'}),
+      el('image',{href:'city/metropolitan-lake-node5-scene-v1-transparent.png',x:344,y:19,width:152,height:90,class:'city-pack-asset metropolitan-lake-node5-scene'}),
       ...[[365,1],[426,1],[324,43],[296,67],[326,88],[420,116],[448,145],[420,174],[448,203],[420,232],[448,261]].map(([x,y])=>
-        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset metropolitan-lake-tree'})
+        el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset metropolitan-lake-tree'})
       ),
-      el('image',{href:'assets/city/signage/bank-sign-v1-transparent-138x69.png',x:182,y:18,width:138,height:69,class:'city-pack-asset bank-sign'})
+      el('image',{href:'city/signage/bank-sign-v1-transparent-138x69.png',x:182,y:18,width:138,height:69,class:'city-pack-asset bank-sign'})
     );
     exteriorContext.append(
       el('rect',{x:350,y:514,width:150,height:96,class:'exterior-service-curb'}),
@@ -444,35 +444,35 @@
       el('rect',{x:458,y:544,width:7,height:14,class:'exterior-loading-mark'}),
       el('rect',{x:476,y:544,width:7,height:14,class:'exterior-loading-mark'}),
       ...[[8,116],[20,224],[6,342],[18,454],[478,126],[462,238],[480,354],[466,462]].map(([x,y])=>
-        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset exterior-tree'})
+        el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset exterior-tree'})
       ),
       ...[[1,163],[31,294],[3,413],[477,163],[447,294],[475,413]].map(([x,y])=>
-        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:22,height:32,class:'city-pack-asset exterior-tree-large'})
+        el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:22,height:32,class:'city-pack-asset exterior-tree-large'})
       ),
       ...[[28,142],[45,205],[25,323],[47,438],[468,252],[476,400],[455,590]].flatMap(([x,y])=>[
         el('rect',{x,y,width:6,height:3,class:'terrain-dirt'}),
         el('rect',{x:x+2,y:y-3,width:2,height:3,class:'terrain-weed'})
       ]),
       ...[[3,535,'large'],[46,559,'large'],[87,530,'large'],[128,558,'large'],[171,531,'large'],[22,576,'small'],[64,535,'small'],[107,577,'small'],[151,544,'small'],[194,574,'small']].map(([x,y,size])=>
-        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:size==='large'?22:11,height:size==='large'?32:16,class:`city-pack-asset hideout-margin-tree hideout-margin-tree-${size}`})
+        el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:size==='large'?22:11,height:size==='large'?32:16,class:`city-pack-asset hideout-margin-tree hideout-margin-tree-${size}`})
       ),
       ...[[4,198],[4,264],[22,371],[4,483]].map(([x,y])=>
-        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset map-left-margin-tree'})
+        el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset map-left-margin-tree'})
       ),
       ...[[40,95],[40,235],[40,330],[40,430],[40,500],[477,275],[438,340],[438,420],[438,500],[438,550]].map(([x,y])=>
-        el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:22,height:32,class:'city-pack-asset map-margin-tree-large'})
+        el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:22,height:32,class:'city-pack-asset map-margin-tree-large'})
       ),
       
     );
     // Existing flower-bed sprite adds small color/ground-cover breaks to the
     // broad green margins on both maps without touching street or lot art.
     [[49,110],[48,210],[49,310],[48,410],[49,510],[438,110],[437,210],[438,310],[437,410],[438,510]].forEach(([x,y])=>
-      exteriorContext.append(el('image',{href:'assets/city/generated-building-specimens/tiny-flower-planter-v1-7x7.png',x,y,width:11,height:11,class:'city-pack-asset margin-flower-bed'}))
+      exteriorContext.append(el('image',{href:'city/generated-building-specimens/tiny-flower-planter-v1-7x7.png',x,y,width:11,height:11,class:'city-pack-asset margin-flower-bed'}))
     );
     if(renderPhase==='GETAWAY')[[21,10],[21,68]].forEach(([x,y])=>
-      exteriorContext.append(el('image',{href:'assets/city/generated-building-specimens/tiny-flower-planter-v1-7x7.png',x,y,width:11,height:11,class:'city-pack-asset bank-verge-flower-bed'}))
+      exteriorContext.append(el('image',{href:'city/generated-building-specimens/tiny-flower-planter-v1-7x7.png',x,y,width:11,height:11,class:'city-pack-asset bank-verge-flower-bed'}))
     );
-    if(renderPhase==='CLEANUP')exteriorContext.append(el('image',{href:'assets/city/airport-garden-sign-v1-transparent.png',x:-4,y:10,width:69,height:82,class:'city-pack-asset airport-garden-sign','aria-hidden':'true'}));
+    if(renderPhase==='CLEANUP')exteriorContext.append(el('image',{href:'city/airport-garden-sign-v1-transparent.png',x:-4,y:10,width:69,height:82,class:'city-pack-asset airport-garden-sign','aria-hidden':'true'}));
   }
   function drawCityBlocks(renderPhase=phase){
     cityLayer.replaceChildren();
@@ -509,7 +509,7 @@
         } else if(framelessBuilding){
           const sprite=el('g',{'data-depth-y':imageY+cityPackAsset.height,'data-depth-kind':'building','data-block-sprite':index+1});sprite.append(image);depthLayer.append(sprite);
         } else g.append(image);
-        if(renderPhase==='GETAWAY'&&index===11)g.append(el('image',{href:'assets/vehicles/yellow-construction-truck-diagonal.png',x:x+8.5,y:y+8,width:34,height:50,class:'stationary-vehicle'}));
+        if(renderPhase==='GETAWAY'&&index===11)g.append(el('image',{href:'vehicles/yellow-construction-truck-diagonal.png',x:x+8.5,y:y+8,width:34,height:50,class:'stationary-vehicle'}));
       } else if(cityPackAsset===null){
         // Intentionally empty while the replacement city modules are recut to the board scale.
       } else if(theme==='commercial'){
@@ -790,7 +790,7 @@
   function vehicle(layer,at,kind,label='',id=''){
     const [x,y]=positions[at],offset=collisionVisualOffsets[id]||{x:0,y:0},frame=headingFrame(collisionVisualHeadings[id]??vehicleHeadings[id]??0),g=el('g',{'data-vehicle':id});g.style.transform=`translate(${x+offset.x}px,${y+offset.y}px)`;g.style.transformOrigin='0 0';
     if(kind==='patrol'||kind==='pursuer')g.append(el('circle',{cx:0,cy:0,r:17,class:'police-halo'}));
-    g.append(el('image',{href:'assets/vehicles/minzinn/police-car-8dir-v1.png',x:-24-frame*48,y:-24,width:384,height:48,'clip-path':'url(#car-frame)',class:'vehicle-sprite'}));
+    g.append(el('image',{href:'vehicles/minzinn/police-car-8dir-v1.png',x:-24-frame*48,y:-24,width:384,height:48,'clip-path':'url(#car-frame)',class:'vehicle-sprite'}));
     if(label){const t=el('text',{x:0,y:3,class:'patrol-label'});t.textContent=label;g.append(t);}
     g.setAttribute('data-depth-y',y+offset.y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);
   }
@@ -806,7 +806,7 @@
   function drawBus(){
     if(!bus)return;
     const size=75,[x,y]=positions[bus.node],next=BUS_ROUTE[(bus.routeIndex+1)%BUS_ROUTE.length],[nextX,nextY]=positions[next],initialHeading=Math.atan2(nextY-y,nextX-x)*180/Math.PI,[col,row]=luxuryFrame(vehicleHeadings.BUS??initialHeading),g=el('g',{'data-vehicle':'BUS'});g.style.transform=`translate(${x}px,${y}px)`;g.style.transformOrigin='0 0';
-    g.append(el('image',{href:'assets/vehicles/white-bus-8dir.png',x:-size/2-col*size,y:-size/2-row*size,width:size*3,height:size*3,'clip-path':'url(#bus-frame)','data-luxury-sheet':'true','data-frame-size':size,class:'vehicle-sprite stationary-vehicle'}));g.setAttribute('data-depth-y',y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);
+    g.append(el('image',{href:'vehicles/white-bus-8dir.png',x:-size/2-col*size,y:-size/2-row*size,width:size*3,height:size*3,'clip-path':'url(#bus-frame)','data-luxury-sheet':'true','data-frame-size':size,class:'vehicle-sprite stationary-vehicle'}));g.setAttribute('data-depth-y',y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);
   }
   function drawFlightClock(renderPhase=phase){
     if(renderPhase!=='CLEANUP'||flightTurnsRemaining===null)return;
@@ -832,16 +832,16 @@
     depthLayer.replaceChildren();beds.replaceChildren();lotSurface.replaceChildren();streets.replaceChildren();bankUnderlay.replaceChildren();bankFrontBuilding.replaceChildren();plazaDecor.replaceChildren();roadblockSigns.replaceChildren();nodes.replaceChildren();objectiveLayer.replaceChildren();policeLayer.replaceChildren();carLayer.replaceChildren();landmarkForeground.replaceChildren();drawCityBlocks(renderPhase);drawExteriorContext(renderPhase);
     [...[[-18,72],[446,166],[6,292],[468,382],[-20,468],[438,506]].entries()].forEach(([index,[x,y]])=>{
       landmarkForeground.append(el('ellipse',{cx:x+26,cy:y+57,rx:24,ry:4,class:'decorative-cloud-shadow','aria-hidden':'true'}));
-      landmarkForeground.append(el('image',{href:index%2?'assets/weather/decorative-cloud-v2-source.png':'assets/weather/decorative-cloud-v1-source.png',x,y:y-36,width:52,height:62,class:`city-pack-asset decorative-cloud${index%2?' decorative-cloud-variation':''}`,'aria-hidden':'true'}));
+      landmarkForeground.append(el('image',{href:index%2?'weather/decorative-cloud-v2-source.png':'weather/decorative-cloud-v1-source.png',x,y:y-36,width:52,height:62,class:`city-pack-asset decorative-cloud${index%2?' decorative-cloud-variation':''}`,'aria-hidden':'true'}));
     });
     [[-18,116],[8,142],[428,124]].forEach(([x,y])=>{
       landmarkForeground.append(el('ellipse',{cx:x+26,cy:y+57,rx:24,ry:4,class:'decorative-cloud-shadow','aria-hidden':'true'}));
-      landmarkForeground.append(el('image',{href:'assets/weather/decorative-cloud-v3-source.png',x,y:y-36,width:52,height:62,class:'city-pack-asset decorative-cloud decorative-cloud-variation','aria-hidden':'true'}));
+      landmarkForeground.append(el('image',{href:'weather/decorative-cloud-v3-source.png',x,y:y-36,width:52,height:62,class:'city-pack-asset decorative-cloud decorative-cloud-variation','aria-hidden':'true'}));
     });
     {
       const [x,y]=[100,526];
       landmarkForeground.append(el('ellipse',{cx:x+39,cy:y+69,rx:35,ry:5,class:'decorative-cloud-shadow','aria-hidden':'true'}));
-      landmarkForeground.append(el('image',{href:'assets/weather/decorative-cloud-v4-source.png',x,y:y-36,width:78,height:93,class:'city-pack-asset decorative-cloud decorative-cloud-variation','aria-hidden':'true'}));
+      landmarkForeground.append(el('image',{href:'weather/decorative-cloud-v4-source.png',x,y:y-36,width:78,height:93,class:'city-pack-asset decorative-cloud decorative-cloud-variation','aria-hidden':'true'}));
     }
     drawFlightClock(renderPhase);
     const shortcutExits=shortcutSelecting?neighbours(pos):[];
@@ -861,16 +861,16 @@
       }
       if(key===MAP_DATA.edgeKey('n24','n34')&&blocked.has(key)){
         const cx=(x1+x2)/2,cy=(y1+y2)/2;
-        [-35,35].forEach(offset=>roadblockSigns.append(el('image',{href:'assets/city/urban-exteriors/roadblock-barricade.png',x:cx-19,y:cy+offset-11,width:38,height:22,class:'roadblock-sign'})));
+        [-35,35].forEach(offset=>roadblockSigns.append(el('image',{href:'city/urban-exteriors/roadblock-barricade.png',x:cx-19,y:cy+offset-11,width:38,height:22,class:'roadblock-sign'})));
       }
     });
     if(renderPhase==='GETAWAY'){
-      bankUnderlay.append(el('image',{href:'assets/city/generated-building-specimens/bank-parking-lot-complete-v3-transparent-138x92.png',x:40,y:0,width:138,height:92,class:'landmark-pixel'}));
-      bankUnderlay.append(el('image',{href:'assets/vehicles/bank-green-car-south-v1-transparent-16x27.png',x:43,y:17,width:21,height:35,class:'stationary-vehicle', 'aria-label':'Parked green car'}));
+      bankUnderlay.append(el('image',{href:'city/generated-building-specimens/bank-parking-lot-complete-v3-transparent-138x92.png',x:40,y:0,width:138,height:92,class:'landmark-pixel'}));
+      bankUnderlay.append(el('image',{href:'vehicles/bank-green-car-south-v1-transparent-16x27.png',x:43,y:17,width:21,height:35,class:'stationary-vehicle', 'aria-label':'Parked green car'}));
     }
     if(renderPhase==='CLEANUP'){
-      [[205,217],[284,217],[205,371],[284,371]].forEach(([x,y])=>plazaDecor.append(el('image',{href:'assets/city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset plaza-tree'})));
-      [[207.5,305],[250,255],[292.5,305],[250,355]].forEach(([cx,cy])=>plazaDecor.append(el('image',{href:'assets/city/urban-exteriors/fountain-transparent.png',x:cx-16,y:cy-16,width:32,height:32,class:'city-pack-asset fountain'})));
+      [[205,217],[284,217],[205,371],[284,371]].forEach(([x,y])=>plazaDecor.append(el('image',{href:'city/generated-building-specimens/compact-round-tree-v1-11x16.png',x,y,width:11,height:16,class:'city-pack-asset plaza-tree'})));
+      [[207.5,305],[250,255],[292.5,305],[250,355]].forEach(([cx,cy])=>plazaDecor.append(el('image',{href:'city/urban-exteriors/fountain-transparent.png',x:cx-16,y:cy-16,width:32,height:32,class:'city-pack-asset fountain'})));
     }
     if(!previewing&&phase==='CLEANUP')objectives.filter(task=>!task.complete).forEach(crewVehicle);
     if(!previewing&&phase==='CLEANUP')drawBus();
@@ -901,12 +901,12 @@
       const hit=el('circle',{cx,cy,r:23,class:'tap-target','aria-label':`Move to ${n.id}`});
       if(!previewing)hit.addEventListener('click',()=>shortcutSelecting?takeShortcut(n.id):move(n.id));g.append(hit);nodes.append(g);
     });
-    nodes.append(el('image',{href:'assets/vehicles/hideout-car-south-v1-transparent-24x41.png',x:462,y:555,width:24,height:41,class:'city-pack-asset parked-hideout-car','aria-hidden':'true'}));
+    nodes.append(el('image',{href:'vehicles/hideout-car-south-v1-transparent-24x41.png',x:462,y:555,width:24,height:41,class:'city-pack-asset parked-hideout-car','aria-hidden':'true'}));
     if(!previewing&&pursuer)vehicle(policeLayer,pursuer,pursuitState==='CAR_SWITCHED'?'patrol':'pursuer',pursuitState==='CAR_SWITCHED'?'P3':'',pursuitState==='CAR_SWITCHED'?'P3':'PURSUER');
     if(!previewing)patrols.forEach((patrol,index)=>vehicle(policeLayer,patrol.current,'patrol',`P${index+1}`,`P${index+1}`));
     if(!previewing&&airportAmbush)vehicle(policeLayer,'bank','patrol','', 'AIRPORT_CHECKPOINT');
     const [x,y]=positions[pos],playerOffset=collisionVisualOffsets.PLAYER||rendezvousVisualOffsets.PLAYER||{x:0,y:0},initialPlayerHeading=phase==='GETAWAY'&&pos==='bank'&&turns===0?90:0,frame=headingFrame(collisionVisualHeadings.PLAYER??vehicleHeadings.PLAYER??initialPlayerHeading),g=el('g',{'data-vehicle':'PLAYER'});g.style.transform=`translate(${x+playerOffset.x}px,${y+playerOffset.y}px)`;g.style.transformOrigin='0 0';
-    const playerSprite=carSwitch.used&&!protectedDeparture?'assets/vehicles/minzinn/yellow-supercar-8dir-v1.png':'assets/vehicles/minzinn/red-musclecar-8dir-v1.png',playerSize=48;
+    const playerSprite=carSwitch.used&&!protectedDeparture?'vehicles/minzinn/yellow-supercar-8dir-v1.png':'vehicles/minzinn/red-musclecar-8dir-v1.png',playerSize=48;
     g.append(el('image',{href:playerSprite,x:-playerSize/2-frame*playerSize,y:-playerSize/2,width:playerSize*8,height:playerSize,'clip-path':'url(#player-car-frame)',class:'vehicle-sprite'}));if(!previewing){g.setAttribute('data-depth-y',y+playerOffset.y);g.setAttribute('data-depth-kind','vehicle');depthLayer.append(g);}
     sortDepthSprites();
     if(!previewing&&(protectedDeparture||hideoutForegroundActive))drawLandmark(landmarkForeground,'HIDEOUT',...positions.hideout);
@@ -944,7 +944,7 @@
     showCard('T-Boned','Your getaway ends here.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('tboned-card');
     const scene=document.createElement('div');scene.className='tboned-scene loading';scene.setAttribute('role','img');scene.setAttribute('aria-label','A police car strikes the red getaway car broadside at a city intersection.');
-    scene.innerHTML='<img class="tboned-background" src="assets/vignettes/t-boned-v1/background.png" alt=""><div class="tboned-action"><div class="tboned-red"><img class="tboned-intact" src="assets/vignettes/t-boned-v1/red-car-intact.png" alt=""><img class="tboned-damaged" src="assets/vignettes/t-boned-v1/red-car-damaged.png" alt=""></div><div class="tboned-police"><img src="assets/vignettes/t-boned-v1/police-car.png" alt=""></div></div>';
+    scene.innerHTML='<img class="tboned-background" src="vignettes/t-boned-v1/background.png" alt=""><div class="tboned-action"><div class="tboned-red"><img class="tboned-intact" src="vignettes/t-boned-v1/red-car-intact.png" alt=""><img class="tboned-damaged" src="vignettes/t-boned-v1/red-car-damaged.png" alt=""></div><div class="tboned-police"><img src="vignettes/t-boned-v1/police-car.png" alt=""></div></div>';
     card.prepend(scene);
     Promise.all([...scene.querySelectorAll('img')].map(image=>image.decode().catch(()=>{}))).then(()=>{if(scene.isConnected)scene.classList.remove('loading');});
   }
@@ -952,77 +952,77 @@
     showCard('Intercepted','The escape ends here.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('intercepted-card');
     const scene=document.createElement('div');scene.className='intercepted-scene';scene.setAttribute('role','img');scene.setAttribute('aria-label','A red getaway car screeches to a nose-to-nose stop with a police car while two officers aim from clear pavement.');
-    scene.innerHTML='<img class="intercepted-background" src="assets/vignettes/intercepted-v1/background.png" alt=""><div class="intercepted-police"><img src="assets/vignettes/intercepted-v1/police-car-candidate.png" alt=""></div><img class="intercepted-officers" src="assets/vignettes/intercepted-v1/officers.png" alt=""><div class="intercepted-red"><img src="assets/vignettes/intercepted-v1/red-car.png" alt=""></div><div class="intercepted-chyron" aria-hidden="true"><b>BREAKING NEWS</b><span>POLICE INTERCEPT GETAWAY CAR</span></div>';
+    scene.innerHTML='<img class="intercepted-background" src="vignettes/intercepted-v1/background.png" alt=""><div class="intercepted-police"><img src="vignettes/intercepted-v1/police-car-candidate.png" alt=""></div><img class="intercepted-officers" src="vignettes/intercepted-v1/officers.png" alt=""><div class="intercepted-red"><img src="vignettes/intercepted-v1/red-car.png" alt=""></div><div class="intercepted-chyron" aria-hidden="true"><b>BREAKING NEWS</b><span>POLICE INTERCEPT GETAWAY CAR</span></div>';
     card.prepend(scene);
     Promise.all([...scene.querySelectorAll('img')].map(image=>image.decode().catch(()=>{}))).then(()=>{if(scene.isConnected)scene.classList.remove('loading');});
   }
   function showShortcutCard(){
     showCard(cardState.card.title,'A parking garage cuts through the block. Close this card, then choose a highlighted exit directly on the map.',[{label:'Choose an exit on the map',action:()=>{hideCard();shortcutSelecting=true;draw();}}]);
     const card=document.querySelector('.situation-card');card.classList.add('shortcut-card');
-    const image=document.createElement('img');image.className='shortcut-art';image.src='assets/vignettes/parking-garage-shortcut-v1-candidate.png';image.alt='The red getaway car squeals into a parking garage.';card.prepend(image);
+    const image=document.createElement('img');image.className='shortcut-art';image.src='vignettes/parking-garage-shortcut-v1-candidate.png';image.alt='The red getaway car squeals into a parking garage.';card.prepend(image);
   }
   function showRoadClosedCard(detail){
     showCard('Road Closed Ahead',detail,[{label:'Keep moving',action:()=>{hideCard();policeTurn();}}]);
     const card=document.querySelector('.situation-card');card.classList.add('road-closed-card');
-    const image=document.createElement('img');image.className='road-closed-art';image.src='assets/vignettes/road-closed-v1-candidate.png';image.alt='The red getaway car reroutes around barricades blocking a city avenue.';card.prepend(image);
+    const image=document.createElement('img');image.className='road-closed-art';image.src='vignettes/road-closed-v1-candidate.png';image.alt='The red getaway car reroutes around barricades blocking a city avenue.';card.prepend(image);
   }
   function showMapTwoBriefingCard(onClose){
     showCard('Make the Drop','The money has to move. Find the cut men, deliver their shares, then get to the airport.',[{label:'Start deliveries',action:()=>{hideCard();onClose?.();}}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art map2-briefing-art';image.src='assets/vignettes/map2-briefing-v1-candidate.png';image.alt='The getaway driver talks on the phone outside the hideout as a police car races past.';image.loading='eager';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art map2-briefing-art';image.src='vignettes/map2-briefing-v1-candidate.png';image.alt='The getaway driver talks on the phone outside the hideout as a police car races past.';image.loading='eager';card.prepend(image);
   }
   function showGetawayCard(){
     showCard('Getaway','Bank hit. Crew paid. Plane boarded. You scroll through the news as the flight attendant brings your whiskey. A job well done.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/first-flight-out-v1-candidate.png';image.alt='A relaxed traveler is served whiskey on a plane above the clouds while looking at a phone.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/first-flight-out-v1-candidate.png';image.alt='A relaxed traveler is served whiskey on a plane above the clouds while looking at a phone.';card.prepend(image);
   }
   function showSecondFlightCard(){
     showCard('Second Flight Departed',"The last flight is gone. Looks like you've got other problems.",[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','second-flight-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/second-flight-missed-v1-candidate.png';image.alt='An airplane takes off ahead while a police car appears in the rearview mirror.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/second-flight-missed-v1-candidate.png';image.alt='An airplane takes off ahead while a police car appears in the rearview mirror.';card.prepend(image);
     const flash=document.createElement('div');flash.className='card-light-flash';flash.setAttribute('aria-hidden','true');card.append(flash);
   }
   function showFlightHeldCard(){
     showCard('Flight Held',"You would have made it if you caught the first flight. You call your lawyer. This is going to take a while.",[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/flight-held-v1-candidate.png';image.alt='Police vehicles block an airport runway in front of a waiting plane.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/flight-held-v1-candidate.png';image.alt='Police vehicles block an airport runway in front of a waiting plane.';card.prepend(image);
   }
   function showTheyWereWaitingCard(){
     showCard('They Were Waiting','The replacement flight was never an escape route. The police were waiting.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','waiting-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/they-were-waiting-v1-candidate.png';image.alt='A police car waits behind the yellow getaway car at the airport with flashing lights.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/they-were-waiting-v1-candidate.png';image.alt='A police car waits behind the yellow getaway car at the airport with flashing lights.';card.prepend(image);
     const flash=document.createElement('div');flash.className='card-light-flash';flash.setAttribute('aria-hidden','true');card.append(flash);
   }
   function showTerminalCard(title,text,button,outcome){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card',outcome==='SURRENDERED'?'surrendered-card':'fought-law-card');
     const image=document.createElement('img');image.className='terminal-art';
-    image.src=outcome==='SURRENDERED'?'assets/vignettes/surrounded-v1-candidate.png':'assets/vignettes/fought-law-v1-candidate.png';
+    image.src=outcome==='SURRENDERED'?'vignettes/surrounded-v1-candidate.png':'vignettes/fought-law-v1-candidate.png';
     image.alt=outcome==='SURRENDERED'?'Police surround the stopped getaway car.':'Police surround the getaway car after a failed breakout.';
     card.prepend(image);
   }
   function showKnownAssociateCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/known-associate-arrest-v1-candidate.png';image.alt='The red getaway car is boxed in by police cruisers and road barricades.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/known-associate-arrest-v1-candidate.png';image.alt='The red getaway car is boxed in by police cruisers and road barricades.';card.prepend(image);
   }
   function showRecognizedCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/recognized-arrest-v1-candidate.png';image.alt='A police officer handcuffs the getaway driver beside a police cruiser at the airport.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/recognized-arrest-v1-candidate.png';image.alt='A police officer handcuffs the getaway driver beside a police cruiser at the airport.';card.prepend(image);
   }
 
   function showPoliceManeuversCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
     const yellow=carSwitch.used&&!protectedDeparture;
-    const image=document.createElement('img');image.className='terminal-art';image.src=yellow?'assets/vignettes/pit-maneuver-yellow-v1-candidate.png':'assets/vignettes/pit-maneuver-red-v1-candidate.png';image.alt=yellow?'A police cruiser performs a PIT maneuver on the yellow getaway car.':'A police cruiser performs a PIT maneuver on the red getaway car.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src=yellow?'vignettes/pit-maneuver-yellow-v1-candidate.png':'vignettes/pit-maneuver-red-v1-candidate.png';image.alt=yellow?'A police cruiser performs a PIT maneuver on the yellow getaway car.':'A police cruiser performs a PIT maneuver on the red getaway car.';card.prepend(image);
   }
 
   function showMatchingDescriptionCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='assets/vignettes/matching-description-arrest-v1-candidate.png';image.alt='A police officer arrests the getaway driver beside a police cruiser at the airport.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/matching-description-arrest-v1-candidate.png';image.alt='A police officer arrests the getaway driver beside a police cruiser at the airport.';card.prepend(image);
   }
   function clearTbonedCard(){const card=document.querySelector('.situation-card');card.classList.remove('tboned-card','intercepted-card','shortcut-card','road-closed-card','terminal-art-card','handoff-art-card','second-flight-card','waiting-card');card.querySelector('.tboned-scene')?.remove();card.querySelector('.intercepted-scene')?.remove();card.querySelector('.shortcut-art')?.remove();card.querySelector('.road-closed-art')?.remove();card.querySelector('.terminal-art')?.remove();card.querySelector('.card-light-flash')?.remove();}
   function showCard(title,text,choices){
@@ -1044,7 +1044,7 @@
     const setups={INTERCEPTED:{player:'n11',police:'n13',impact:'n12'},T_BONED:{player:'n11',police:'n02',impact:'n12'},POLICE_MANEUVERS:{player:'n11',police:'n10',impact:'n12'}},setup=setups[direction],priorPreview=previewPhase;
     previewPhase='GETAWAY';draw();const layer=document.getElementById('contact-demo');layer.replaceChildren();
     const playerTravel=travelHeading(setup.player,setup.impact),policeTravel=travelHeading(setup.police,setup.impact),demoOffsets=contactOffsets(direction,playerTravel,policeTravel,'DEMO_POLICE'),playerFinal=direction==='INTERCEPTED'?playerTravel-45:null,policeFinal=direction==='INTERCEPTED'?policeTravel-45:null;
-    const player=demoContactVehicle('DEMO_PLAYER','assets/vehicles/minzinn/red-musclecar-8dir-v1.png',setup.player,setup.impact,demoOffsets.PLAYER,playerFinal),police=demoContactVehicle('DEMO_POLICE','assets/vehicles/minzinn/police-car-8dir-v1.png',setup.police,setup.impact,demoOffsets.DEMO_POLICE,policeFinal);
+    const player=demoContactVehicle('DEMO_PLAYER','vehicles/minzinn/red-musclecar-8dir-v1.png',setup.player,setup.impact,demoOffsets.PLAYER,playerFinal),police=demoContactVehicle('DEMO_POLICE','vehicles/minzinn/police-car-8dir-v1.png',setup.police,setup.impact,demoOffsets.DEMO_POLICE,policeFinal);
     animating=true;await Promise.allSettled([player.finished,police.finished]);
     const impact=[...layer.children].map(vehicle=>vehicle.animate([{transform:`${vehicle.style.transform} translate(0,0)`},{transform:`${vehicle.style.transform} translate(3px,-2px)`},{transform:`${vehicle.style.transform} translate(-2px,2px)`},{transform:`${vehicle.style.transform} translate(0,0)`}],{duration:180}));
     await Promise.allSettled(impact.map(animation=>animation.finished));animating=false;
@@ -1223,7 +1223,7 @@
     const person=task.id==='PAY_DRIVER'?'driver':'inside contact';
     const heading=travelHeading(previousPos,pos)??vehicleHeadings[task.id]??vehicleHeadings.PLAYER??0,side=directionUnit(heading+90),runId=currentRun?.id;
     vehicleHeadings.PLAYER=heading;rendezvousVisualOffsets={PLAYER:{x:-side.x*24,y:-side.y*24},[task.id]:{x:side.x*24,y:side.y*24}};animating=true;visualPositions=vehicleState();draw();
-    setTimeout(()=>{if(currentRun?.id!==runId||!task.pending)return;animating=false;showCard('Cut Delivered',`You hand over the cut. One less loose end.`,[{label:'Keep moving',action:()=>{const firstPayment=!objectives.some(candidate=>candidate.complete);task.pending=false;task.complete=true;if(firstPayment){knownAssociateAfterTurn=turns+1;recordEvent(pos,'KNOWN_ASSOCIATE_STATE_ARMED',null,{activeAfterTurn:knownAssociateAfterTurn,taskId:task.id});}recordEvent(pos,'CREW_PAID',null,{taskId:task.id,node:task.node,routeId:task.routeId});rendezvousVisualOffsets={};hideCard();if(!maybeTriggerImpasse())continueTurn();}}]);if(task.id==='PAY_DRIVER'||task.id==='PAY_CONTACT'){const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','handoff-art-card');const image=document.createElement('img');image.className='terminal-art';image.src=task.id==='PAY_DRIVER'?'assets/vignettes/crew-handoff-curbside-v1-candidate.png':'assets/vignettes/crew-handoff-service-lot-v1-candidate.png';image.alt=task.id==='PAY_DRIVER'?'A curbside cash handoff between the yellow sports car and a cutman car.':'A service-lot cash handoff between the yellow sports car and a cutman car.';card.prepend(image);}},320);
+    setTimeout(()=>{if(currentRun?.id!==runId||!task.pending)return;animating=false;showCard('Cut Delivered',`You hand over the cut. One less loose end.`,[{label:'Keep moving',action:()=>{const firstPayment=!objectives.some(candidate=>candidate.complete);task.pending=false;task.complete=true;if(firstPayment){knownAssociateAfterTurn=turns+1;recordEvent(pos,'KNOWN_ASSOCIATE_STATE_ARMED',null,{activeAfterTurn:knownAssociateAfterTurn,taskId:task.id});}recordEvent(pos,'CREW_PAID',null,{taskId:task.id,node:task.node,routeId:task.routeId});rendezvousVisualOffsets={};hideCard();if(!maybeTriggerImpasse())continueTurn();}}]);if(task.id==='PAY_DRIVER'||task.id==='PAY_CONTACT'){const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','handoff-art-card');const image=document.createElement('img');image.className='terminal-art';image.src=task.id==='PAY_DRIVER'?'vignettes/crew-handoff-curbside-v1-candidate.png':'vignettes/crew-handoff-service-lot-v1-candidate.png';image.alt=task.id==='PAY_DRIVER'?'A curbside cash handoff between the yellow sports car and a cutman car.':'A service-lot cash handoff between the yellow sports car and a cutman car.';card.prepend(image);}},320);
   }
   function move(to){
     if(ended||awaitingCard||shortcutSelecting||animating||flightTransitioning||!neighbours(pos).includes(to))return;
