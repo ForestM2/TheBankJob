@@ -280,12 +280,12 @@
 <div class="intro-backdrop staging" id="intro-backdrop">
   <section class="intro-card" role="dialog" aria-modal="true" aria-labelledby="intro-title">
     <div class="intro-scene">
-      <img class="intro-background" src="vignettes/opening-bank-background-v2.png" alt="An empty downtown street outside a bank.">
+      <img class="intro-background" src="opening-bank-background-v2.png" alt="An empty downtown street outside a bank.">
       <div class="intro-skids" aria-hidden="true"></div>
-      <img class="intro-car" src="vignettes/opening-muscle-car-v1.png" alt="A red muscle car pulls up to the curb.">
-      <img class="intro-robber" src="vignettes/opening-robber-foreground-v4.png" alt="A robber carrying two bags waits on the sidewalk with his back to the bank.">
+      <img class="intro-car" src="opening-muscle-car-v1.png" alt="A red muscle car pulls up to the curb.">
+      <img class="intro-robber" src="opening-robber-foreground-v4.png" alt="A robber carrying two bags waits on the sidewalk with his back to the bank.">
     </div>
-    <div class="intro-copy"><h2 id="intro-title" class="sr-only">The Bank Job</h2><button id="start-getaway" aria-label="Start getaway"><img class="intro-title-art" src="vignettes/the-bank-job-title.png" alt="The Bank Job. Click to start."></button></div>
+    <div class="intro-copy"><h2 id="intro-title" class="sr-only">The Bank Job</h2><button id="start-getaway" aria-label="Start getaway"><img class="intro-title-art" src="the-bank-job-title.png" alt="The Bank Job. Click to start."></button></div>
   </section>
 </div>
 <div class="card-backdrop" id="card-backdrop" hidden>
@@ -944,7 +944,7 @@
     showCard('T-Boned','Your getaway ends here.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('tboned-card');
     const scene=document.createElement('div');scene.className='tboned-scene loading';scene.setAttribute('role','img');scene.setAttribute('aria-label','A police car strikes the red getaway car broadside at a city intersection.');
-    scene.innerHTML='<img class="tboned-background" src="vignettes/t-boned-v1/background.png" alt=""><div class="tboned-action"><div class="tboned-red"><img class="tboned-intact" src="vignettes/t-boned-v1/red-car-intact.png" alt=""><img class="tboned-damaged" src="vignettes/t-boned-v1/red-car-damaged.png" alt=""></div><div class="tboned-police"><img src="vignettes/t-boned-v1/police-car.png" alt=""></div></div>';
+    scene.innerHTML='<img class="tboned-background" src="t-boned-v1/background.png" alt=""><div class="tboned-action"><div class="tboned-red"><img class="tboned-intact" src="t-boned-v1/red-car-intact.png" alt=""><img class="tboned-damaged" src="t-boned-v1/red-car-damaged.png" alt=""></div><div class="tboned-police"><img src="t-boned-v1/police-car.png" alt=""></div></div>';
     card.prepend(scene);
     Promise.all([...scene.querySelectorAll('img')].map(image=>image.decode().catch(()=>{}))).then(()=>{if(scene.isConnected)scene.classList.remove('loading');});
   }
@@ -952,77 +952,77 @@
     showCard('Intercepted','The escape ends here.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('intercepted-card');
     const scene=document.createElement('div');scene.className='intercepted-scene';scene.setAttribute('role','img');scene.setAttribute('aria-label','A red getaway car screeches to a nose-to-nose stop with a police car while two officers aim from clear pavement.');
-    scene.innerHTML='<img class="intercepted-background" src="vignettes/intercepted-v1/background.png" alt=""><div class="intercepted-police"><img src="vignettes/intercepted-v1/police-car-candidate.png" alt=""></div><img class="intercepted-officers" src="vignettes/intercepted-v1/officers.png" alt=""><div class="intercepted-red"><img src="vignettes/intercepted-v1/red-car.png" alt=""></div><div class="intercepted-chyron" aria-hidden="true"><b>BREAKING NEWS</b><span>POLICE INTERCEPT GETAWAY CAR</span></div>';
+    scene.innerHTML='<img class="intercepted-background" src="intercepted-v1/background.png" alt=""><div class="intercepted-police"><img src="intercepted-v1/police-car-candidate.png" alt=""></div><img class="intercepted-officers" src="intercepted-v1/officers.png" alt=""><div class="intercepted-red"><img src="intercepted-v1/red-car.png" alt=""></div><div class="intercepted-chyron" aria-hidden="true"><b>BREAKING NEWS</b><span>POLICE INTERCEPT GETAWAY CAR</span></div>';
     card.prepend(scene);
     Promise.all([...scene.querySelectorAll('img')].map(image=>image.decode().catch(()=>{}))).then(()=>{if(scene.isConnected)scene.classList.remove('loading');});
   }
   function showShortcutCard(){
     showCard(cardState.card.title,'A parking garage cuts through the block. Close this card, then choose a highlighted exit directly on the map.',[{label:'Choose an exit on the map',action:()=>{hideCard();shortcutSelecting=true;draw();}}]);
     const card=document.querySelector('.situation-card');card.classList.add('shortcut-card');
-    const image=document.createElement('img');image.className='shortcut-art';image.src='vignettes/parking-garage-shortcut-v1-candidate.png';image.alt='The red getaway car squeals into a parking garage.';card.prepend(image);
+    const image=document.createElement('img');image.className='shortcut-art';image.src='parking-garage-shortcut-v1-candidate.png';image.alt='The red getaway car squeals into a parking garage.';card.prepend(image);
   }
   function showRoadClosedCard(detail){
     showCard('Road Closed Ahead',detail,[{label:'Keep moving',action:()=>{hideCard();policeTurn();}}]);
     const card=document.querySelector('.situation-card');card.classList.add('road-closed-card');
-    const image=document.createElement('img');image.className='road-closed-art';image.src='vignettes/road-closed-v1-candidate.png';image.alt='The red getaway car reroutes around barricades blocking a city avenue.';card.prepend(image);
+    const image=document.createElement('img');image.className='road-closed-art';image.src='road-closed-v1-candidate.png';image.alt='The red getaway car reroutes around barricades blocking a city avenue.';card.prepend(image);
   }
   function showMapTwoBriefingCard(onClose){
     showCard('Make the Drop','The money has to move. Find the cut men, deliver their shares, then get to the airport.',[{label:'Start deliveries',action:()=>{hideCard();onClose?.();}}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art map2-briefing-art';image.src='vignettes/map2-briefing-v1-candidate.png';image.alt='The getaway driver talks on the phone outside the hideout as a police car races past.';image.loading='eager';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art map2-briefing-art';image.src='map2-briefing-v1-candidate.png';image.alt='The getaway driver talks on the phone outside the hideout as a police car races past.';image.loading='eager';card.prepend(image);
   }
   function showGetawayCard(){
     showCard('Getaway','Bank hit. Crew paid. Plane boarded. You scroll through the news as the flight attendant brings your whiskey. A job well done.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/first-flight-out-v1-candidate.png';image.alt='A relaxed traveler is served whiskey on a plane above the clouds while looking at a phone.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='first-flight-out-v1-candidate.png';image.alt='A relaxed traveler is served whiskey on a plane above the clouds while looking at a phone.';card.prepend(image);
   }
   function showSecondFlightCard(){
     showCard('Second Flight Departed',"The last flight is gone. Looks like you've got other problems.",[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','second-flight-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/second-flight-missed-v1-candidate.png';image.alt='An airplane takes off ahead while a police car appears in the rearview mirror.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='second-flight-missed-v1-candidate.png';image.alt='An airplane takes off ahead while a police car appears in the rearview mirror.';card.prepend(image);
     const flash=document.createElement('div');flash.className='card-light-flash';flash.setAttribute('aria-hidden','true');card.append(flash);
   }
   function showFlightHeldCard(){
     showCard('Flight Held',"You would have made it if you caught the first flight. You call your lawyer. This is going to take a while.",[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/flight-held-v1-candidate.png';image.alt='Police vehicles block an airport runway in front of a waiting plane.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='flight-held-v1-candidate.png';image.alt='Police vehicles block an airport runway in front of a waiting plane.';card.prepend(image);
   }
   function showTheyWereWaitingCard(){
     showCard('They Were Waiting','The replacement flight was never an escape route. The police were waiting.',[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','waiting-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/they-were-waiting-v1-candidate.png';image.alt='A police car waits behind the yellow getaway car at the airport with flashing lights.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='they-were-waiting-v1-candidate.png';image.alt='A police car waits behind the yellow getaway car at the airport with flashing lights.';card.prepend(image);
     const flash=document.createElement('div');flash.className='card-light-flash';flash.setAttribute('aria-hidden','true');card.append(flash);
   }
   function showTerminalCard(title,text,button,outcome){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card',outcome==='SURRENDERED'?'surrendered-card':'fought-law-card');
     const image=document.createElement('img');image.className='terminal-art';
-    image.src=outcome==='SURRENDERED'?'vignettes/surrounded-v1-candidate.png':'vignettes/fought-law-v1-candidate.png';
+    image.src=outcome==='SURRENDERED'?'surrounded-v1-candidate.png':'fought-law-v1-candidate.png';
     image.alt=outcome==='SURRENDERED'?'Police surround the stopped getaway car.':'Police surround the getaway car after a failed breakout.';
     card.prepend(image);
   }
   function showKnownAssociateCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/known-associate-arrest-v1-candidate.png';image.alt='The red getaway car is boxed in by police cruisers and road barricades.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='known-associate-arrest-v1-candidate.png';image.alt='The red getaway car is boxed in by police cruisers and road barricades.';card.prepend(image);
   }
   function showRecognizedCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/recognized-arrest-v1-candidate.png';image.alt='A police officer handcuffs the getaway driver beside a police cruiser at the airport.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='recognized-arrest-v1-candidate.png';image.alt='A police officer handcuffs the getaway driver beside a police cruiser at the airport.';card.prepend(image);
   }
 
   function showPoliceManeuversCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
     const yellow=carSwitch.used&&!protectedDeparture;
-    const image=document.createElement('img');image.className='terminal-art';image.src=yellow?'vignettes/pit-maneuver-yellow-v1-candidate.png':'vignettes/pit-maneuver-red-v1-candidate.png';image.alt=yellow?'A police cruiser performs a PIT maneuver on the yellow getaway car.':'A police cruiser performs a PIT maneuver on the red getaway car.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src=yellow?'pit-maneuver-yellow-v1-candidate.png':'pit-maneuver-red-v1-candidate.png';image.alt=yellow?'A police cruiser performs a PIT maneuver on the yellow getaway car.':'A police cruiser performs a PIT maneuver on the red getaway car.';card.prepend(image);
   }
 
   function showMatchingDescriptionCard(title,text){
     showCard(title,text,[{label:'Play Again',action:()=>returnToTitle()}]);
     const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card');
-    const image=document.createElement('img');image.className='terminal-art';image.src='vignettes/matching-description-arrest-v1-candidate.png';image.alt='A police officer arrests the getaway driver beside a police cruiser at the airport.';card.prepend(image);
+    const image=document.createElement('img');image.className='terminal-art';image.src='matching-description-arrest-v1-candidate.png';image.alt='A police officer arrests the getaway driver beside a police cruiser at the airport.';card.prepend(image);
   }
   function clearTbonedCard(){const card=document.querySelector('.situation-card');card.classList.remove('tboned-card','intercepted-card','shortcut-card','road-closed-card','terminal-art-card','handoff-art-card','second-flight-card','waiting-card');card.querySelector('.tboned-scene')?.remove();card.querySelector('.intercepted-scene')?.remove();card.querySelector('.shortcut-art')?.remove();card.querySelector('.road-closed-art')?.remove();card.querySelector('.terminal-art')?.remove();card.querySelector('.card-light-flash')?.remove();}
   function showCard(title,text,choices){
@@ -1223,7 +1223,7 @@
     const person=task.id==='PAY_DRIVER'?'driver':'inside contact';
     const heading=travelHeading(previousPos,pos)??vehicleHeadings[task.id]??vehicleHeadings.PLAYER??0,side=directionUnit(heading+90),runId=currentRun?.id;
     vehicleHeadings.PLAYER=heading;rendezvousVisualOffsets={PLAYER:{x:-side.x*24,y:-side.y*24},[task.id]:{x:side.x*24,y:side.y*24}};animating=true;visualPositions=vehicleState();draw();
-    setTimeout(()=>{if(currentRun?.id!==runId||!task.pending)return;animating=false;showCard('Cut Delivered',`You hand over the cut. One less loose end.`,[{label:'Keep moving',action:()=>{const firstPayment=!objectives.some(candidate=>candidate.complete);task.pending=false;task.complete=true;if(firstPayment){knownAssociateAfterTurn=turns+1;recordEvent(pos,'KNOWN_ASSOCIATE_STATE_ARMED',null,{activeAfterTurn:knownAssociateAfterTurn,taskId:task.id});}recordEvent(pos,'CREW_PAID',null,{taskId:task.id,node:task.node,routeId:task.routeId});rendezvousVisualOffsets={};hideCard();if(!maybeTriggerImpasse())continueTurn();}}]);if(task.id==='PAY_DRIVER'||task.id==='PAY_CONTACT'){const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','handoff-art-card');const image=document.createElement('img');image.className='terminal-art';image.src=task.id==='PAY_DRIVER'?'vignettes/crew-handoff-curbside-v1-candidate.png':'vignettes/crew-handoff-service-lot-v1-candidate.png';image.alt=task.id==='PAY_DRIVER'?'A curbside cash handoff between the yellow sports car and a cutman car.':'A service-lot cash handoff between the yellow sports car and a cutman car.';card.prepend(image);}},320);
+    setTimeout(()=>{if(currentRun?.id!==runId||!task.pending)return;animating=false;showCard('Cut Delivered',`You hand over the cut. One less loose end.`,[{label:'Keep moving',action:()=>{const firstPayment=!objectives.some(candidate=>candidate.complete);task.pending=false;task.complete=true;if(firstPayment){knownAssociateAfterTurn=turns+1;recordEvent(pos,'KNOWN_ASSOCIATE_STATE_ARMED',null,{activeAfterTurn:knownAssociateAfterTurn,taskId:task.id});}recordEvent(pos,'CREW_PAID',null,{taskId:task.id,node:task.node,routeId:task.routeId});rendezvousVisualOffsets={};hideCard();if(!maybeTriggerImpasse())continueTurn();}}]);if(task.id==='PAY_DRIVER'||task.id==='PAY_CONTACT'){const card=document.querySelector('.situation-card');card.classList.add('terminal-art-card','handoff-art-card');const image=document.createElement('img');image.className='terminal-art';image.src=task.id==='PAY_DRIVER'?'crew-handoff-curbside-v1-candidate.png':'crew-handoff-service-lot-v1-candidate.png';image.alt=task.id==='PAY_DRIVER'?'A curbside cash handoff between the yellow sports car and a cutman car.':'A service-lot cash handoff between the yellow sports car and a cutman car.';card.prepend(image);}},320);
   }
   function move(to){
     if(ended||awaitingCard||shortcutSelecting||animating||flightTransitioning||!neighbours(pos).includes(to))return;
